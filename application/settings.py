@@ -83,12 +83,30 @@ WSGI_APPLICATION = 'application.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+import dj_database_url
+import os
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.peek', # Placeholder to avoid load
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+if 'VERCEL' in os.environ:
+    # Use Postgres on Vercel to avoid sqlite3 missing module error
+    DATABASES['default'] = dj_database_url.config(
+        default='postgres://postgres:password@localhost:5432/postgres',
+        conn_max_age=600
+    )
+elif 'sqlite' in str(DATABASES['default']):
+    # Default local callback
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

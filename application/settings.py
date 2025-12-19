@@ -94,12 +94,11 @@ DATABASES = {
     }
 }
 
-if 'VERCEL' in os.environ:
-    # Use Postgres on Vercel to avoid sqlite3 missing module error
-    # Use a real DB if provided, else fallback to dummy to prevent startup crash
-    db_from_env = dj_database_url.config(conn_max_age=600)
+if 'VERCEL' in os.environ or os.environ.get('DATABASE_URL'):
+    # Use Postgres from DATABASE_URL (Neon, Vercel Postgres, etc.)
+    db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
     if db_from_env:
-        DATABASES['default'].update(db_from_env)
+        DATABASES['default'] = db_from_env
     else:
         # No DB present? Use dummy to show Django startup page instead of crash
         DATABASES['default'] = {'ENGINE': 'django.db.backends.dummy'}

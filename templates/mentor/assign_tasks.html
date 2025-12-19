@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Tasks - Task Certification Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Assign New Task to User</h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> {{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle"></i> {{ success }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <a href="/assign-tasks/" class="btn btn-primary me-2">
+                        <i class="fas fa-plus"></i> Assign Another Task
+                    </a>
+                    <a href="/mentor-dashboard/" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+                            rel="stylesheet" />
+
+                        <div class="mb-3">
+                            <label for="assigned_to" class="form-label">
+                                <i class="fas fa-users"></i> <strong>Assign To User(s) *</strong>
+                            </label>
+                            <select class="form-control" id="assigned_to" name="assigned_to" required
+                                multiple="multiple">
+                                {% for user in users %}
+                                <option value="{{ user.id }}">
+                                    {{ user.get_full_name|default:user.username }} ({{ user.username }})
+                                </option>
+                                {% empty %}
+                                <option value="" disabled>No users available</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tasks"></i> <strong>Task Name *</strong>
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                placeholder="e.g., Create user authentication system">
+                            <small class="text-muted">Brief title of the task.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label">
+                                <i class="fas fa-clipboard-list"></i> <strong>Task Description</strong>
+                            </label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="5"
+                                placeholder="Provide detailed description of what needs to be done, requirements, deliverables, etc."></textarea>
+                            <small class="text-muted">Detailed description to help the user understand the task
+                                requirements.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="due_date" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> <strong>Due Date *</strong>
+                            </label>
+                            <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+                            <small class="text-muted">When should this task be completed?</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb"></i> <strong>Tips for creating effective tasks:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Be specific about what needs to be delivered</li>
+                                <li>Set realistic due dates</li>
+                                <li>Include acceptance criteria or requirements</li>
+                                <li>Provide any resources or links needed</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Assign Task
+                            </button>
+                            <a href="/mentor-dashboard/" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var yyyy = today.getFullYear();
+        var hh = String(today.getHours()).padStart(2, '0');
+        var min = String(today.getMinutes()).padStart(2, '0');
+
+        var currentDateTime = yyyy + '-' + mm + '-' + dd + 'T' + hh + ':' + min;
+        document.getElementById('due_date').setAttribute('min', currentDateTime);
+
+        // Initialize Select2
+        $('#assigned_to').select2({
+            placeholder: "Select users...",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}

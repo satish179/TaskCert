@@ -1,0 +1,55 @@
+<div class="sidebar">
+    <div class="sidebar-header mb-4">
+        <h5 class="px-3">Menu</h5>
+    </div>
+    <nav class="nav flex-column">
+        {% if user.is_staff %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'mentor_dashboard' %}active{% endif %}"
+            href="/mentor-dashboard/">
+            <i class="fas fa-chalkboard-teacher"></i> Mentor Dashboard
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'assign_tasks' %}active{% endif %}"
+            href="/assign-tasks/">
+            <i class="fas fa-plus-circle"></i> Assign Tasks
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'manage_submissions' %}active{% endif %}"
+            href="/manage-submissions/">
+            <i class="fas fa-check-circle"></i> Review Submissions
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"
+            href="/manage-users/">
+            <i class="fas fa-users"></i> Users
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'manage_tasks' %}active{% endif %}"
+            href="/manage-tasks/">
+            <i class="fas fa-clipboard-list"></i> Tasks
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'manage_exams' %}active{% endif %}"
+            href="/manage-exams/">
+            <i class="fas fa-graduation-cap"></i> Exams
+        </a>
+        {% elif user.role == "user" %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="/dashboard/">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'my_tasks' %}active{% endif %}" href="/my-tasks/">
+            <i class="fas fa-tasks"></i> My Tasks
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'submissions' %}active{% endif %}"
+            href="/submissions/">
+            <i class="fas fa-paper-plane"></i> Submissions
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'exams' %}active{% endif %}" href="/exams/">
+            <i class="fas fa-file-alt"></i> Exams
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'certificates' %}active{% endif %}"
+            href="/certificates/">
+            <i class="fas fa-certificate"></i> Certificates
+        </a>
+        <a class="nav-link {% if 'sample_questions' in request.resolver_match.url_name %}active{% endif %}"
+            href="/sample-questions/">
+            <i class="fas fa-book-open"></i> Sample Questions
+        </a>
+        {% endif %}
+    </nav>
+</div>

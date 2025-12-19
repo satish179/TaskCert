@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Questions - {{ exam.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="text-secondary text-uppercase small fw-bold mb-1">Editing Exam</h5>
+                        <h2 class="fw-bold mb-0">{{ exam.name }}</h2>
+                    </div>
+                    <div>
+                        <a href="/manage-exams/" class="btn btn-outline-success">
+                            <i class="fas fa-check me-1"></i> Finish & Save
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-5">
+                <h4 class="fw-bold mb-4"><i class="fas fa-plus-circle text-primary me-2"></i>Add New Question</h4>
+
+                {% if success %}
+                <div class="alert alert-success mb-4 alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>{{ success }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="question_text" class="form-label fw-bold">Question Text *</label>
+                        <textarea class="form-control" id="question_text" name="question_text" rows="3" required
+                            placeholder="Enter the question here..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="question_type" class="form-label fw-bold">Question Type *</label>
+                        <select class="form-select" id="question_type" name="question_type" onchange="toggleOptions()">
+                            <option value="multiple_choice">Multiple Choice (MCQ)</option>
+                            <option value="short_answer">Short Answer (Written)</option>
+                            <option value="true_false">True / False</option>
+                        </select>
+                    </div>
+
+                    <!-- Options for MCQ -->
+                    <div id="options-container" class="mb-4">
+                        <label class="form-label fw-bold">Options (for MCQ)</label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">A</span>
+                            <input type="text" class="form-control" name="option_1" placeholder="Option 1">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">B</span>
+                            <input type="text" class="form-control" name="option_2" placeholder="Option 2">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">C</span>
+                            <input type="text" class="form-control" name="option_3" placeholder="Option 3">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">D</span>
+                            <input type="text" class="form-control" name="option_4" placeholder="Option 4">
+                        </div>
+                        <small class="text-muted">Leave blank if fewer options are needed.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="correct_answer" class="form-label fw-bold">Correct Answer *</label>
+                        <input type="text" class="form-control" id="correct_answer" name="correct_answer" required
+                            placeholder="Enter the exact answer text or option letter">
+                        <div class="form-text mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            For <strong>MCQ</strong>, enter the full text of the correct option.<br>
+                            For <strong>True/False</strong>, enter 'True' or 'False'.<br>
+                            For <strong>Short Answer</strong>, enter the expected answer/keyword.
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Add Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Existing Questions List -->
+            <div class="mt-5">
+                <h5 class="fw-bold mb-3 text-secondary">Questions in this Exam ({{ questions|length }})</h5>
+                {% if questions %}
+                {% for q in questions %}
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-light text-dark border mb-2">{{ q.get_question_type_display
+                                    }}</span>
+                                <p class="mb-2 fw-bold">{{ q.question_text }}</p>
+                                <p class="mb-0 text-success small"><i class="fas fa-check me-1"></i> Answer: {{
+                                    q.correct_answer }}</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="/manage-exams/question/{{ q.id }}/edit/"
+                                    class="btn btn-sm btn-outline-secondary border-0">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="/exams/delete-question/{{ q.id }}/"
+                                    onsubmit="return confirm('Delete this question?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-4 border rounded bg-light">
+                    <i class="fas fa-question-circle mb-2"></i>
+                    <p class="mb-0">No questions added yet.</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleOptions() {
+        const type = document.getElementById('question_type').value;
+        const container = document.getElementById('options-container');
+
+        if (type === 'multiple_choice') {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    // Run on load
+    toggleOptions();
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Question - {{ question.exam.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card p-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold"><i class="fas fa-edit text-primary me-2"></i>Edit Question</h2>
+                    <a href="/manage-exams/{{ question.exam.id }}/add-questions/"
+                        class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Questions
+                    </a>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="question_text" class="form-label fw-bold">Question Text *</label>
+                        <textarea class="form-control" id="question_text" name="question_text" rows="3"
+                            required>{{ question.question_text }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="question_type" class="form-label fw-bold">Question Type *</label>
+                        <select class="form-select" id="question_type" name="question_type" onchange="toggleOptions()">
+                            <option value="multiple_choice" {% if question.question_type=='multiple_choice' %}selected{%
+                                endif %}>Multiple Choice (MCQ)</option>
+                            <option value="short_answer" {% if question.question_type=='short_answer' %}selected{% endif
+                                %}>Short Answer (Written)</option>
+                            <option value="true_false" {% if question.question_type=='true_false' %}selected{% endif %}>
+                                True / False</option>
+                        </select>
+                    </div>
+
+                    <!-- Options for MCQ -->
+                    <div id="options-container" class="mb-4" style="display:none;">
+                        <label class="form-label fw-bold">Options (for MCQ)</label>
+                        {% for i in "0123"|make_list %}
+                        <!-- Logic here is tricky in templates to map back existing options to slots 1-4.
+                                 We will try to unpack them safely using index lookups if available. -->
+                        {% endfor %}
+
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">A</span>
+                            <input type="text" class="form-control" name="option_1" placeholder="Option 1"
+                                value="{{ question.options|slice:'0:1'|join:'' }}">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">B</span>
+                            <input type="text" class="form-control" name="option_2" placeholder="Option 2"
+                                value="{{ question.options|slice:'1:2'|join:'' }}">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">C</span>
+                            <input type="text" class="form-control" name="option_3" placeholder="Option 3"
+                                value="{{ question.options|slice:'2:3'|join:'' }}">
+                        </div>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-secondary">D</span>
+                            <input type="text" class="form-control" name="option_4" placeholder="Option 4"
+                                value="{{ question.options|slice:'3:4'|join:'' }}">
+                        </div>
+                        <small class="text-muted">Leave blank if previously empty or fewer options are needed.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="correct_answer" class="form-label fw-bold">Correct Answer *</label>
+                        <input type="text" class="form-control" id="correct_answer" name="correct_answer" required
+                            value="{{ question.correct_answer }}">
+                        <div class="form-text mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Update the correct answer corresponding to the question type.
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-1"></i> Save Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleOptions() {
+        const type = document.getElementById('question_type').value;
+        const container = document.getElementById('options-container');
+
+        if (type === 'multiple_choice') {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    // Run on load
+    document.addEventListener('DOMContentLoaded', toggleOptions);
+</script>
+{% endblock %}

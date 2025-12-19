@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+
+{% block title %}Exams - Task Certification Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .exams-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 20px;
+        margin-bottom: 40px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .exams-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .exams-header p {
+        margin: 10px 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .exam-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .exam-card:hover {
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        transform: translateY(-5px);
+    }
+    
+    .exam-card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-bottom: 4px solid #ffc107;
+    }
+    
+    .exam-card-header h5 {
+        margin: 0 0 8px 0;
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+    
+    .exam-card-header p {
+        margin: 0;
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+    
+    .exam-card-body {
+        padding: 25px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .exam-info {
+        margin-bottom: 20px;
+    }
+    
+    .exam-info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #666;
+        font-size: 0.95rem;
+    }
+    
+    .exam-info-item i {
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+    
+    .exam-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .exam-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .exam-badge-questions {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .exam-badge-duration {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .btn-start-exam {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: auto;
+        width: 100%;
+    }
+    
+    .btn-start-exam:hover {
+        color: white;
+        transform: scale(1.02);
+    }
+    
+    .admin-info {
+        background: #f8f9ff;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        border-radius: 6px;
+        color: #666;
+        margin-top: auto;
+    }
+    
+    .admin-info a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .admin-info a:hover {
+        text-decoration: underline;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #667eea;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: #666;
+        margin-bottom: 30px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Timer */
+    .timer {
+        font-size: 2rem;
+        color: white;
+        text-align: center;
+        padding: 15px 20px;
+        background: rgba(255, 193, 7, 0.2);
+        border-radius: 8px;
+        font-weight: bold;
+        border: 2px solid rgba(255, 193, 7, 0.5);
+    }
+    
+    /* Questions */
+    .question-card {
+        margin-bottom: 25px;
+        padding: 25px;
+        background: #f8f9ff;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .question-number {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    .question-text {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.05rem;
+    }
+    
+    .option {
+        margin: 12px 0;
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .option:hover {
+        border-color: #667eea;
+        background-color: #f8f9ff;
+    }
+    
+    .option input[type="radio"] {
+        cursor: pointer;
+    }
+    
+    .option input[type="radio"]:checked + label {
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    .option.selected {
+        border-color: #667eea;
+        background-color: #f0f4ff;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .option label {
+        margin: 0;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    /* Modal */
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .modal-title {
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+    
+    .modal-footer {
+        background: #f8f9fa;
+        border-top: 2px solid #e9ecef;
+    }
+    
+    .btn-submit-exam {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit-exam:hover {
+        color: white;
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5 mb-5">
+    <!-- Header Section -->
+    <div class="exams-header">
+        <h1><i class="fas fa-file-alt"></i> Certification Exams</h1>
+        <p>Test your knowledge and earn your certificate</p>
+    </div>
+    
+    {% if exams %}
+        <div class="row">
+            {% for exam in exams %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="exam-card">
+                        <!-- Card Header -->
+                        <div class="exam-card-header">
+                            <h5><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h5>
+                            <p>{{ exam.description }}</p>
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="exam-card-body">
+                            <!-- Exam Info -->
+                            <div class="exam-info">
+                                <div class="exam-info-item">
+                                    <i class="fas fa-question-circle"></i>
+                                    <span><strong>Questions:</strong> {{ exam.questions.count }}</span>
+                                </div>
+                                <div class="exam-info-item">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <span><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</span>
+                                </div>
+                                <div class="exam-info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span><strong>Due:</strong> {{ exam.due_date|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="exam-info-item">
+                                    <i class="fas fa-check-double"></i>
+                                    <span><strong>Pass Score:</strong> {{ exam.pass_score }}%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Badges -->
+                            <div class="exam-badges">
+                                <span class="exam-badge exam-badge-questions">
+                                    <i class="fas fa-book"></i> {{ exam.questions.count }} Questions
+                                </span>
+                                <span class="exam-badge exam-badge-duration">
+                                    <i class="fas fa-stopwatch"></i> {{ exam.duration_minutes }} Min
+                                </span>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            {% if not user.is_staff %}
+                            <button class="btn-start-exam" data-bs-toggle="modal" 
+                                    data-bs-target="#examModal{{ exam.id }}"
+                                    onclick="initExam({{ exam.id }}, {{ exam.duration_minutes }})">
+                                <i class="fas fa-play-circle"></i> Start Exam
+                            </button>
+                            {% else %}
+                            <div class="admin-info">
+                                <i class="fas fa-shield-alt"></i> Admin users can manage exams from the 
+                                <a href="/manage-exams/">Management Panel</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Exam Modal -->
+                <div class="modal fade" id="examModal{{ exam.id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div style="flex: 1;">
+                                    <h5 class="modal-title"><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h5>
+                                </div>
+                                <div class="timer" id="timer{{ exam.id }}">30:00</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            
+                            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                                <form id="examForm{{ exam.id }}" class="exam-form">
+                                    {% csrf_token %}
+                                    
+                                    {% for question in exam.questions.all %}
+                                    <div class="question-card">
+                                        <div class="question-number">Question {{ forloop.counter }} of {{ exam.questions.count }}</div>
+                                        <div class="question-text">{{ question.question_text }}</div>
+                                        
+                                        {% for option in question.options %}
+                                        <div class="option" onclick="updateOption(this.querySelector('input'))">
+                                            <input type="radio" name="q{{ question.id }}" value="{{ option }}" id="q{{ question.id }}_{{ forloop.counter }}">
+                                            <label for="q{{ question.id }}_{{ forloop.counter }}">{{ option }}</label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endfor %}
+                                </form>
+                            </div>
+                            
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                                <button type="button" class="btn-submit-exam" onclick="submitExam({{ exam.id }}, '{{ exam.name }}')">
+                                    <i class="fas fa-paper-plane"></i> Submit Exam
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h3>No Exams Available Yet</h3>
+            <p>Exams - No exams available yet. Please complete all your tasks first.</p>
+            <a href="/dashboard/" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let timers = {};
+
+function initExam(examId, durationMinutes) {
+    let timerElement = document.getElementById('timer' + examId);
+    let timeLeft = durationMinutes * 60; // minutes in seconds
+    
+    if (timers[examId]) clearInterval(timers[examId]);
+    
+    timers[examId] = setInterval(() => {
+        timeLeft--;
+        
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        
+        timerElement.textContent = 
+            (minutes < 10 ? '0' + minutes : minutes) + ':' + 
+            (seconds < 10 ? '0' + seconds : seconds);
+        
+        if (timeLeft <= 0) {
+            clearInterval(timers[examId]);
+            submitExam(examId, document.querySelector('#examModal' + examId + ' .modal-title').textContent);
+        }
+    }, 1000);
+}
+
+function updateOption(radio) {
+    const option = radio.closest('.option');
+    option.parentNode.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+}
+
+function submitExam(examId, examName) {
+    const form = document.getElementById('examForm' + examId);
+    const answers = {};
+    const formData = new FormData(form);
+
+    for (let [key, value] of formData.entries()) {
+        if (key.startsWith('q')) {
+            answers[key] = value;
+        }
+    }
+
+    // Log answers for debugging
+    console.log('Submitting answers:', answers);
+
+    // Send to server
+    fetch('/api/results/submit_exam/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        },
+        body: JSON.stringify({
+            exam_id: examId,
+            answers: answers
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(timers[examId]);
+        alert(`Exam submitted! Your score: ${data.score.toFixed(2)}/100\nResult: ${data.passed ? 'PASSED' : 'FAILED'}`);
+        document.getElementById('examModal' + examId).querySelector('.btn-close').click();
+        // Redirect to certificates page to show results
+        window.location.href = '/certificates/';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting exam. Please try again.');
+    });
+}
+</script>
+{% endblock %}

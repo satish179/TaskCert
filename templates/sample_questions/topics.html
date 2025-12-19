@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Sample Questions - Topics{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Sample Questions</h1>
+                    <p class="text-muted">Choose a topic to view sample questions and prepare for your exams</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                {% for topic in topics %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm hover-card">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="topic-icon me-3">
+                                        <i class="fas fa-book-open text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title mb-1">{{ topic.name }}</h5>
+                                        <small class="text-muted">{{ topic.description|truncatechars:50 }}</small>
+                                    </div>
+                                </div>
+
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-question-circle"></i>
+                                            {{ topic.total_questions }} questions
+                                        </small>
+                                        <span class="badge bg-primary">{{ topic.active_questions }} active</span>
+                                    </div>
+
+                                    <a href="{% url 'sample_questions' topic.id %}" class="btn btn-primary w-100">
+                                        <i class="fas fa-eye"></i> View Questions
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Topics Available</h4>
+                            <p class="text-muted">Sample questions will be added soon. Please check back later.</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.topic-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+</style>
+{% endblock %}

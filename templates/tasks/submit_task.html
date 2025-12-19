@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Task - Task Certification Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-upload"></i> Submit Task: {{ task.name }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> {{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle"></i> {{ success }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <a href="/dashboard/" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    {% else %}
+                    <!-- Task Details Form Section -->
+                    <div class="card mb-4 bg-light border-0">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="fas fa-file-clipboard"></i> Task Details (Set by Mentor)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>Task ID</strong></label>
+                                        <div class="form-control-plaintext">
+                                            <span class="badge bg-primary">#{{ task.id }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>Task Name</strong></label>
+                                        <div class="form-control-plaintext">
+                                            {{ task.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-group">
+                                    <label class="form-label"><strong>Task Description/Guidelines</strong></label>
+                                    <div class="form-control-plaintext bg-white p-3 border rounded">
+                                        {{ task.remarks }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>Start Date</strong></label>
+                                        <div class="form-control-plaintext">
+                                            <i class="fas fa-calendar-alt"></i> {{ task.created_at|date:"M d, Y H:i" }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>Due Date (Fixed by Mentor)</strong></label>
+                                        <div class="form-control-plaintext">
+                                            {% now "U" as now_timestamp %}
+                                            {% with due_timestamp=task.due_date|date:"U" %}
+                                            {% if due_timestamp|add:"0" > now_timestamp|add:"0" %}
+                                            <span class="badge bg-success"><i class="fas fa-clock"></i> {{
+                                                task.due_date|date:"M d, Y H:i" }}</span>
+                                            <br>
+                                            <small class="text-muted">⏱️ Time remaining: {{ task.due_date|timeuntil
+                                                }}</small>
+                                            {% else %}
+                                            <span class="badge bg-danger"><i class="fas fa-exclamation"></i> {{
+                                                task.due_date|date:"M d, Y H:i" }} (OVERDUE)</span>
+                                            <br>
+                                            <small class="text-danger"><strong>⚠️ This task is overdue!</strong></small>
+                                            {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Submission Form -->
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <h5 class="mb-3"><i class="fas fa-edit"></i> Your Task Submission</h5>
+
+                        <div class="mb-4">
+                            <label for="content" class="form-label">
+                                <strong>Your Answer/Work Submission (Text)</strong>
+                            </label>
+                            <textarea class="form-control" id="content" name="content" rows="6"
+                                placeholder="Enter your complete answer or description..."
+                                style="font-family: 'Courier New', monospace;"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="file" class="form-label">
+                                <strong>Upload File (Optional)</strong>
+                            </label>
+                            <input type="file" class="form-control" id="file" name="file">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Supported formats: PDF, DOCX, ZIP, PNG, JPG.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Before Submitting:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Ensure your submission is complete and follows the guidelines above</li>
+                                <li>Double-check all information is accurate and properly formatted</li>
+                                <li>You have <strong>{{ task.due_date|timeuntil }}</strong> before the deadline</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>What happens next:</strong> Your submission will
+                            be reviewed by your mentor/admin.
+                            If approved and submitted on time, the next task will be automatically assigned to you.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Task
+                            </button>
+                            <a href="/dashboard/" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

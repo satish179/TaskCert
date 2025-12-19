@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Task Certification Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        padding: 3rem;
+        margin: -2rem -2rem 3rem -2rem;
+        border-radius: 0;
+        box-shadow: 0 10px 40px rgba(99, 102, 241, 0.15);
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .dashboard-header p {
+        margin: 0.75rem 0 0 0;
+        font-size: 1.05rem;
+        opacity: 0.95;
+        font-weight: 400;
+    }
+
+    .stat-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s ease;
+        overflow: hidden;
+        height: 100%;
+        background: white;
+        border-left: 4px solid #6366f1;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        transform: translateY(-8px);
+    }
+
+    .stat-card-header {
+        padding: 1.75rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+
+    .stat-card-primary .stat-icon {
+        color: #6366f1;
+    }
+
+    .stat-card-success .stat-icon {
+        color: #10b981;
+    }
+
+    .stat-card-warning .stat-icon {
+        color: #f59e0b;
+    }
+
+    .stat-card-info .stat-icon {
+        color: #06b6d4;
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 10px 0;
+        color: #1f2937;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .progress-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .progress-section h3 {
+        color: #1f2937;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #6366f1;
+        font-size: 0.95rem;
+    }
+
+    .progress {
+        height: 28px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: width 0.5s ease;
+    }
+
+    .task-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .task-section h3 {
+        color: #1f2937;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .task-item {
+        border-left: 4px solid #6366f1;
+        padding: 1.25rem;
+        background: #f8f9ff;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .task-item:hover {
+        border-left-color: var(--secondary);
+        background: #f5f7ff;
+        transform: translateX(4px);
+    }
+
+    .task-item.overdue {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .task-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .task-item h5 {
+        margin: 0 0 8px 0;
+        color: #1f2937;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .task-item p {
+        margin: 0 0 10px 0;
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .task-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .task-meta-item {
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .task-meta-item strong {
+        color: #6366f1;
+        font-weight: 600;
+    }
+
+    .task-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #9ca3af;
+    }
+
+    .empty-state-icon {
+        font-size: 3.5rem;
+        color: #d1d5db;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            margin: -1rem -1rem 1.5rem -1rem;
+            padding: 1.5rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-creative-header">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+
+            <h1 class="display-4 fw-bold mb-1">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+            <p class="lead opacity-75">Your learning journey continues here.</p>
+        </div>
+        <div class="d-none d-md-block text-end opacity-50">
+            <i class="fas fa-rocket fa-4x"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overlap Grid -->
+<div class="stats-overlap-grid">
+    <div class="stat-card-creative">
+        <div class="stat-icon-box purple">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div>
+            <div class="h3 fw-bold mb-0">{{ active_tasks_count }}</div>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">Active Tasks</div>
+        </div>
+    </div>
+
+    <div class="stat-card-creative">
+        <div class="stat-icon-box success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+            <div class="h3 fw-bold mb-0">{{ completed_tasks_count }}</div>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">Completed</div>
+        </div>
+    </div>
+
+    <div class="stat-card-creative">
+        <div class="stat-icon-box warning">
+            <i class="fas fa-file-upload"></i>
+        </div>
+        <div>
+            <div class="h3 fw-bold mb-0">{{ pending_submissions_count }}</div>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">Pending</div>
+        </div>
+    </div>
+
+    <a href="/certificates/" class="stat-card-creative text-decoration-none">
+        <div class="stat-icon-box info">
+            <i class="fas fa-certificate"></i>
+        </div>
+        <div>
+            <div class="h3 fw-bold mb-0 text-dark">{{ certificates_count }}</div>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">Certificates</div>
+        </div>
+    </a>
+</div>
+
+<div class="container-fluid px-4">
+    <div class="row g-4">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <!-- Overall Progress -->
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Overall
+                        Progress</h5>
+                    <span class="h4 fw-bold text-primary mb-0">{{ overall_progress }}%</span>
+                </div>
+                <div class="progress" style="height: 12px; border-radius: 6px; background: #f1f5f9;">
+                    <div class="progress-bar" role="progressbar"
+                        style="width: {{ overall_progress }}%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary)); box-shadow: 0 2px 5px rgba(var(--primary-rgb), 0.3);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Tasks -->
+            <div class="mb-5">
+                <div class="section-title">
+                    <i class="fas fa-bolt text-warning"></i> Current Tasks
+                </div>
+
+                {% if current_tasks %}
+                <div class="task-card-grid">
+                    {% for task in current_tasks %}
+                    <div class="creative-task-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="task-status-pill status-{{ task.status }}">
+                                {{ task.get_status_display }}
+                            </span>
+                            <small class="text-secondary fw-bold">
+                                <i class="fas fa-clock me-1"></i> {{ task.due_date|date:"j M" }}
+                            </small>
+                        </div>
+
+                        <h5 class="fw-bold mb-2">{{ task.name }}</h5>
+                        <p class="text-secondary small mb-3 flex-grow-1">{{ task.remarks|truncatechars:80 }}</p>
+
+                        <a href="/tasks/{{ task.id }}/submit/" class="btn btn-primary w-100">
+                            Start Task <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="glass-card p-5 text-center">
+                    <div class="mb-3 text-secondary opacity-25">
+                        <i class="fas fa-clipboard-check fa-4x"></i>
+                    </div>
+                    <h5>All Caught Up!</h5>
+                    <p class="text-secondary">You have no pending tasks right now. Great job!</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Overdue Tasks -->
+            {% if overdue_tasks %}
+            <div class="mb-5">
+                <div class="section-title text-danger">
+                    <i class="fas fa-exclamation-circle"></i> Requires Attention
+                </div>
+                <div class="task-card-grid">
+                    {% for task in overdue_tasks %}
+                    <div class="creative-task-card" style="border-left: 4px solid var(--danger);">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="task-status-pill status-overdue">Overdue</span>
+                            <small class="text-danger fw-bold">
+                                {{ task.due_date|date:"j M" }}
+                            </small>
+                        </div>
+                        <h5 class="fw-bold mb-2">{{ task.name }}</h5>
+                        <p class="text-secondary small mb-3 flex-grow-1">{{ task.remarks|truncatechars:80 }}</p>
+                        <a href="/tasks/{{ task.id }}/submit/" class="btn btn-outline-danger w-100">
+                            Submit Now
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Mentor Card -->
+            {% if mentor %}
+            <div class="glass-card p-0 mb-4 position-relative overflow-hidden">
+                <div class="p-4 bg-light border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-box info rounded-circle" style="width: 56px; height: 56px;">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <div class="small fw-bold text-secondary text-uppercase">Your Mentor</div>
+                            <h5 class="fw-bold mb-0">{{ mentor.name }}</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <p class="small text-secondary mb-3">{{ mentor.bio|default:"No bio available."|truncatechars:100 }}
+                    </p>
+                    <div class="d-grid">
+                        <a href="mailto:{{ mentor.email }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-envelope me-2"></i>Contact Mentor
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Activity -->
+            <div class="glass-card p-4">
+                <h6 class="fw-bold mb-3 border-bottom pb-2">Recent Activity</h6>
+                {% if recent_submissions %}
+                <div class="d-flex flex-column gap-3">
+                    {% for sub in recent_submissions %}
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="stat-icon-box {% if sub.passed %}success{% else %}warning{% endif %} rounded-circle"
+                            style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas {% if sub.status == 'approved' %}fa-check{% else %}fa-clock{% endif %}"></i>
+                        </div>
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="fw-bold text-truncate" title="{{ sub.task.name }}">{{ sub.task.name }}</div>
+                            <div class="small text-secondary">{{ sub.submitted_at|date:"M j, g:i a" }}</div>
+                        </div>
+                        {% if sub.score %}
+                        <span class="fw-bold text-success">{{ sub.score|floatformat:0 }}%</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-secondary small text-center my-3">No recent activity.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

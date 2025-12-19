@@ -1,0 +1,984 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificates - Task Certification Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-8px) rotate(1deg); }
+        66% { transform: translateY(-12px) rotate(-1deg); }
+    }
+
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4), 0 0 40px rgba(102, 126, 234, 0.2); }
+        50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.6), 0 0 50px rgba(102, 126, 234, 0.4), 0 0 70px rgba(102, 126, 234, 0.2); }
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    @keyframes slideInUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .certificates-header {
+        background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
+        background-size: 400% 400%;
+        color: white;
+        padding: 60px 40px;
+        margin-bottom: 60px;
+        border-radius: 25px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+        animation: float 8s ease-in-out infinite, gradientShift 15s ease infinite;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .certificates-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        animation: shimmer 4s infinite;
+    }
+
+    .certificates-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.02)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .certificates-header h1 {
+        margin: 0;
+        font-size: 3rem;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificates-header p {
+        margin: 15px 0 0 0;
+        font-size: 1.2rem;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-card {
+        border: none;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.8);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.320, 1);
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+        background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.9) 100%);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.2);
+        animation: slideInUp 0.8s ease-out;
+    }
+
+    .certificate-card:hover {
+        box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(102, 126, 234, 0.3);
+        transform: translateY(-12px) scale(1.03) rotate(1deg);
+        animation: glow 3s ease-in-out infinite, pulse 2s ease-in-out infinite;
+        background: linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(248,249,250,0.95) 100%);
+    }
+
+    .certificate-card:nth-child(odd) {
+        animation-delay: 0.1s;
+    }
+
+    .certificate-card:nth-child(even) {
+        animation-delay: 0.2s;
+    }
+
+    .certificate-card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-bottom: 4px solid #ffc107;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .certificate-card-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .certificate-card:hover .certificate-card-header::before {
+        left: 100%;
+    }
+
+    .certificate-card-header h5 {
+        margin: 0 0 12px 0;
+        font-weight: 700;
+        font-size: 1.4rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+        padding: 8px 15px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        border: 1px solid rgba(255,255,255,0.3);
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-body {
+        padding: 25px;
+    }
+
+    .cert-info-item {
+        margin-bottom: 18px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .cert-info-item:hover {
+        transform: translateX(5px);
+    }
+
+    .cert-info-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .cert-info-label {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cert-info-value {
+        color: #333;
+        font-size: 1.1rem;
+        margin-top: 8px;
+        font-weight: 500;
+    }
+
+    .cert-score {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cert-score::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.6s;
+    }
+
+    .certificate-card:hover .cert-score::before {
+        left: 100%;
+    }
+
+    .cert-score-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+
+    .cert-score-value {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-top: 8px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+    }
+
+    .cert-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .btn-preview {
+        flex: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-preview::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-preview:hover::before {
+        left: 100%;
+    }
+
+    .btn-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-download {
+        flex: 1;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 14px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-download::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.6s;
+    }
+
+    .btn-download:hover::before {
+        left: 100%;
+    }
+
+    .btn-download:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 25px rgba(240, 147, 251, 0.5);
+        color: white;
+        text-decoration: none;
+        background: linear-gradient(135deg, #e887f8 0%, #f34b69 100%);
+    }
+
+    .btn-download:active {
+        transform: translateY(-1px) scale(0.98);
+    }
+
+    .btn-download.loading {
+        pointer-events: none;
+        position: relative;
+    }
+
+    .btn-download.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        margin: auto;
+        border: 2px solid transparent;
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .btn-download.loading .btn-text {
+        opacity: 0;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 30px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 20px;
+        margin: 40px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        color: #667eea;
+        margin-bottom: 25px;
+        animation: float 4s ease-in-out infinite;
+    }
+
+    .empty-state h3 {
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 15px;
+        font-size: 2rem;
+    }
+
+    .empty-state p {
+        color: #666;
+        margin-bottom: 35px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .certificate-preview {
+        background: linear-gradient(135deg, #f5e6d3 0%, #e6d7c3 50%, #f0e6d6 100%);
+        border: 4px solid #8b7355;
+        border-radius: 20px;
+        padding: 60px;
+        text-align: center;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), inset 0 0 0 2px rgba(255,255,255,0.1);
+        min-height: 650px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        animation: bounceIn 0.8s ease-out;
+    }
+
+    .certificate-preview::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        border: 3px solid rgba(139, 115, 85, 0.4);
+        border-radius: 15px;
+        pointer-events: none;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+    }
+
+    .certificate-preview::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="parchment" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="transparent"/><circle cx="10" cy="10" r="0.5" fill="rgba(139,115,85,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23parchment)"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    .certificate-title {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #8b4513;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 35px;
+        border-bottom: 3px solid #8b4513;
+        padding-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-content {
+        font-size: 1.2rem;
+        color: #333;
+        margin: 25px 0;
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-recipient {
+        font-size: 2.5rem;
+        font-style: italic;
+        color: #8b4513;
+        margin: 35px 0;
+        text-decoration: underline;
+        text-decoration-color: #daa520;
+        text-decoration-thickness: 3px;
+        text-underline-offset: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-exam {
+        font-size: 1.5rem;
+        color: #555;
+        margin: 25px 0;
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+    }
+
+    .certificate-number {
+        font-size: 1rem;
+        color: #666;
+        margin-top: 50px;
+        padding-top: 25px;
+        border-top: 2px solid #8b4513;
+        position: relative;
+        z-index: 1;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+        padding: 20px 30px;
+    }
+
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    .modal-footer {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-top: 2px solid #dee2e6;
+        padding: 20px 30px;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+
+    /* Enhanced Responsive Design */
+    @media (max-width: 1200px) {
+        .certificates-header h1 {
+            font-size: 2.5rem;
+        }
+
+        .certificate-preview {
+            padding: 40px;
+            min-height: 550px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .certificates-header {
+            padding: 40px 30px;
+            margin-bottom: 40px;
+        }
+
+        .certificates-header h1 {
+            font-size: 2.2rem;
+        }
+
+        .certificate-card {
+            margin-bottom: 30px;
+        }
+
+        .certificate-preview {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .certificate-title {
+            font-size: 2.5rem;
+        }
+
+        .certificate-recipient {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .certificates-header {
+            padding: 30px 20px;
+            border-radius: 15px;
+        }
+
+        .certificates-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .certificates-header p {
+            font-size: 1rem;
+        }
+
+        .certificate-card {
+            border-radius: 15px;
+        }
+
+        .certificate-card-header {
+            padding: 20px;
+        }
+
+        .certificate-card-header h5 {
+            font-size: 1.2rem;
+        }
+
+        .certificate-body {
+            padding: 20px;
+        }
+
+        .certificate-preview {
+            padding: 25px;
+            min-height: 450px;
+            border-radius: 15px;
+        }
+
+        .certificate-title {
+            font-size: 2rem;
+            margin-bottom: 25px;
+        }
+
+        .certificate-recipient {
+            font-size: 1.8rem;
+            margin: 25px 0;
+        }
+
+        .certificate-exam {
+            font-size: 1.3rem;
+        }
+
+        .cert-actions {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-preview, .btn-download {
+            padding: 12px 20px;
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .certificates-header {
+            padding: 25px 15px;
+        }
+
+        .certificates-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .certificate-preview {
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .certificate-title {
+            font-size: 1.8rem;
+        }
+
+        .certificate-recipient {
+            font-size: 1.5rem;
+        }
+
+        .certificate-content {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state to download buttons
+    const downloadButtons = document.querySelectorAll('.btn-download');
+
+    downloadButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const btn = this;
+            const originalText = btn.innerHTML;
+
+            // Add loading class and spinner
+            btn.classList.add('loading');
+            btn.innerHTML = '<span class="btn-text">' + originalText + '</span>';
+
+            // Remove loading state after 3 seconds (simulate download time)
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.innerHTML = originalText;
+            }, 3000);
+        });
+    });
+
+    // Add stagger animation to certificate cards
+    const cards = document.querySelectorAll('.certificate-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+
+    // Add intersection observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Initially hide cards for animation
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
+    });
+
+    // Add hover sound effect simulation (visual feedback)
+    const buttons = document.querySelectorAll('.btn-preview, .btn-download');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+
+    // Add click ripple effect
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'rgba(255, 255, 255, 0.6)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.left = (e.offsetX - 10) + 'px';
+            ripple.style.top = (e.offsetY - 10) + 'px';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+});
+
+// Add ripple animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5 mb-5">
+    <!-- Header Section -->
+    <div class="certificates-header">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1><i class="fas fa-certificate me-3"></i> My Certificates</h1>
+                <p>View and download your earned certificates</p>
+            </div>
+            <div class="col-lg-4 text-end">
+                <div style="font-size: 4rem; opacity: 0.8;">
+                    <i class="fas fa-award text-warning"></i>
+                    <i class="fas fa-trophy text-success ms-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if certificates %}
+        <div class="row">
+            {% for cert in certificates %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="certificate-card">
+                        <!-- Card Header -->
+                        <div class="certificate-card-header">
+                            <h5><i class="fas fa-trophy"></i> {{ cert.exam.name }}</h5>
+                            <span class="certificate-badge">
+                                <i class="fas fa-calendar-alt"></i> {{ cert.issued_date|date:"M d, Y" }}
+                            </span>
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="certificate-body">
+                            <!-- Score Display -->
+                            {% if cert.exam_result_score is not None %}
+                            <div class="cert-score">
+                                <div class="cert-score-label">Your Score</div>
+                                <div class="cert-score-value">{{ cert.exam_result_score|floatformat:0 }}%</div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Certificate Info -->
+                            <div class="cert-info-item">
+                                <div class="cert-info-label"><i class="fas fa-id-card"></i> Certificate Number</div>
+                                <div class="cert-info-value">
+                                    <code style="background: #f8f9fa; padding: 5px 8px; border-radius: 4px;">
+                                        {{ cert.certificate_number }}
+                                    </code>
+                                </div>
+                            </div>
+                            
+                            {% if cert.institution %}
+                            <div class="cert-info-item">
+                                <div class="cert-info-label"><i class="fas fa-building"></i> Institution</div>
+                                <div class="cert-info-value">{{ cert.institution }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="cert-info-item">
+                                <div class="cert-info-label"><i class="fas fa-user"></i> Recipient Name</div>
+                                <div class="cert-info-value">
+                                    {{ cert.name|default:user.get_full_name|default:user.username }}
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="cert-actions">
+                                <button class="btn-preview" data-bs-toggle="modal"
+                                        data-bs-target="#previewModal{{ cert.id }}">
+                                    <span class="btn-text"><i class="fas fa-eye"></i> Preview</span>
+                                </button>
+                                {% if not user.is_staff %}
+                                <a class="btn-download" href="/api/certificates/{{ cert.id }}/download/" download>
+                                    <span class="btn-text"><i class="fas fa-download"></i> Download PDF</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview Modal -->
+                <div class="modal fade" id="previewModal{{ cert.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-certificate"></i> Certificate Preview</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="certificate-preview">
+                                    <!-- Decorative corner elements -->
+                                    <div style="position: absolute; top: 20px; left: 20px; font-size: 2rem; color: #daa520; opacity: 0.6;">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <div style="position: absolute; top: 20px; right: 20px; font-size: 2rem; color: #daa520; opacity: 0.6;">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <div style="position: absolute; bottom: 20px; left: 20px; font-size: 2rem; color: #daa520; opacity: 0.6;">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <div style="position: absolute; bottom: 20px; right: 20px; font-size: 2rem; color: #daa520; opacity: 0.6;">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+
+                                    <div class="certificate-title">
+                                        <i class="fas fa-certificate me-3"></i>
+                                        Certificate of Completion
+                                    </div>
+
+                                    <div class="certificate-content">
+                                        <i class="fas fa-scroll me-2"></i>
+                                        This is to certify that
+                                    </div>
+
+                                    <div class="certificate-recipient">
+                                        {{ cert.name|default:user.get_full_name|default:user.username }}
+                                    </div>
+
+                                    <div class="certificate-content">
+                                        <i class="fas fa-check-circle me-2 text-success"></i>
+                                        has successfully completed the examination
+                                    </div>
+
+                                    <div class="certificate-exam">
+                                        <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                                        <strong>{{ cert.exam.name }}</strong>
+                                    </div>
+
+                                    {% if cert.institution %}
+                                    <div class="certificate-content">
+                                        <i class="fas fa-building me-2 text-info"></i>
+                                        from <strong>{{ cert.institution }}</strong>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if cert.exam_result_score is not None %}
+                                    <div class="certificate-content">
+                                        <i class="fas fa-chart-line me-2 text-warning"></i>
+                                        with a score of <strong>{{ cert.exam_result_score|floatformat:0 }}%</strong>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="certificate-content">
+                                        <i class="fas fa-trophy me-2 text-warning"></i>
+                                        In recognition of the achievement and competency demonstrated
+                                    </div>
+
+                                    <div class="certificate-number">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <i class="fas fa-hashtag me-2"></i>
+                                                Certificate No.: {{ cert.certificate_number }}
+                                            </div>
+                                            <div class="col-6">
+                                                <i class="fas fa-calendar-alt me-2"></i>
+                                                Issued: {{ cert.issued_date|date:"F d, Y" }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Signature line -->
+                                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #8b4513; position: relative;">
+                                        <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f5e6d3; padding: 0 20px;">
+                                            <i class="fas fa-signature text-muted"></i>
+                                        </div>
+                                        <div class="certificate-content" style="font-style: italic; color: #666;">
+                                            Authorized Signature
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Close
+                                </button>
+                                {% if not user.is_staff %}
+                                <a class="btn btn-download" href="/api/certificates/{{ cert.id }}/download/" download>
+                                    <span class="btn-text"><i class="fas fa-download"></i> Download as PDF</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <h3>No Certificates Yet</h3>
+            <p>You haven't earned any certificates yet. Complete all required tasks and pass the exam to earn your certificate!</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/dashboard/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-tasks me-2"></i> Go to Dashboard
+                </a>
+                <a href="/exams/" class="btn btn-outline-success btn-lg">
+                    <i class="fas fa-graduation-cap me-2"></i> Take Exam
+                </a>
+            </div>
+            <div class="mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-lightbulb me-1"></i>
+                    Tip: Complete your assigned tasks first, then take the certification exam
+                </small>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

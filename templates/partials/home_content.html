@@ -1,0 +1,112 @@
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-bg-pattern"></div>
+    <div class="hero-content">
+        <h1 class="hero-title">Master Your Skills With Certificates</h1>
+        <p class="hero-subtitle">A comprehensive platform for learning, assignments, and professional certification</p>
+        <div class="hero-buttons">
+            {% if user.is_authenticated %}
+            <a href="/dashboard/" class="btn-hero btn-hero-primary">
+                <i class="fas fa-home me-2"></i>Go to Dashboard
+            </a>
+            {% else %}
+            <a href="/student-login/" class="btn-hero btn-hero-primary">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+            </a>
+            <a href="/register/" class="btn-hero btn-hero-secondary">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="features-section">
+    <div class="features-container">
+        <div class="section-title">
+            <h2>Complete Learning Platform</h2>
+            <p>Everything you need to learn, practice, and certify your skills</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+                <h3>Task Management</h3>
+                <p>Get structured assignments from your mentor with clear deadlines and submission tracking.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-pencil-alt"></i></div>
+                <h3>Online Exams</h3>
+                <p>Take comprehensive exams with auto-grading and instant results with randomized questions.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+                <h3>Certifications</h3>
+                <p>Earn professional certificates upon successful exam completion. Download as PDF.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-book"></i></div>
+                <h3>Practice Materials</h3>
+                <p>Access sample questions and study materials organized by topic for better preparation.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-user-tie"></i></div>
+                <h3>Expert Mentors</h3>
+                <p>Learn from experienced mentors who guide you through the entire learning journey.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Progress Tracking</h3>
+                <p>Monitor your learning progress with detailed analytics and performance metrics.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section">
+    <div class="stats-container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h4>1000+</h4>
+                <p>Active Learners</p>
+            </div>
+            <div class="stat-item">
+                <h4>50+</h4>
+                <p>Courses & Topics</p>
+            </div>
+            <div class="stat-item">
+                <h4>95%</h4>
+                <p>Success Rate</p>
+            </div>
+            <div class="stat-item">
+                <h4>24/7</h4>
+                <p>Available Access</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <div class="cta-container">
+        <h2>Ready to Start Learning?</h2>
+        <p>Join thousands of learners who have successfully completed their certification journey.</p>
+        {% if not user.is_authenticated %}
+        <a href="/register/" class="btn-cta">
+            <i class="fas fa-user-plus me-2"></i>Create Your Account Today
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Custom Footer for home page -->
+<div class="footer">
+    <p>&copy; 2025 Task Certification Platform. All rights reserved. | Empowering learners worldwide.</p>
+</div>

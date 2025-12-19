@@ -1,0 +1,27 @@
+{% extends 'base/base.html' %}
+
+{% block title %}400 Bad Request - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template py-5">
+                <h1 class="display-1 text-danger">400</h1>
+                <h2 class="display-4">Bad Request</h2>
+                <div class="error-details my-4">
+                    <p class="lead">{{ error_message|default:"Your browser sent a request that this server could not understand." }}</p>
+                </div>
+                <div class="error-actions mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home"></i> Take Me Home
+                    </a>
+                    <a href="{% url 'contact' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-envelope"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Submissions - Task Certification Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="mb-4"><i class="fas fa-paper-plane"></i> My Submissions</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Task</th>
+                                <th>Submitted Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th>Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                                <tr>
+                                    <td><strong>{{ submission.task.name }}</strong></td>
+                                    <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        {% if submission.status == 'submitted' %}
+                                            <span class="badge bg-warning">Pending Review</span>
+                                        {% elif submission.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif submission.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if submission.score %}
+                                            {{ submission.score }}/100
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ submission.feedback|truncatewords:15 }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No submissions yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

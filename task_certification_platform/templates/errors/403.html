@@ -1,0 +1,29 @@
+{% extends 'base/base.html' %}
+
+{% block title %}403 Forbidden - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template py-5">
+                <h1 class="display-1 text-warning">403</h1>
+                <h2 class="display-4">Access Forbidden</h2>
+                <div class="error-details my-4">
+                    <p class="lead">{{ error_message|default:"You don't have permission to access this page." }}</p>
+                </div>
+                <div class="error-actions mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home"></i> Take Me Home
+                    </a>
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

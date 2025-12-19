@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Certificate - Task Certification Platform{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card" style="border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div>
+                    <h2 class="mb-1" style="font-weight: 800; color: var(--dark);">Certificate Verification</h2>
+                    <p class="mb-0" style="color: var(--muted);">Enter a certificate number to verify authenticity.</p>
+                </div>
+                <a href="/" class="btn btn-outline-primary">Back to Home</a>
+            </div>
+
+            <hr style="border-color: var(--border);" />
+
+            <form method="post" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <div class="col-12 col-md-8">
+                    <label class="form-label" for="certificate_number">Certificate Number</label>
+                    <input
+                        id="certificate_number"
+                        name="certificate_number"
+                        type="text"
+                        class="form-control"
+                        value="{{ query }}"
+                        placeholder="e.g. CERT-20250101-AB12CD34"
+                        style="border-radius: var(--radius-sm);"
+                        required
+                    />
+                </div>
+                <div class="col-12 col-md-4 d-grid">
+                    <button class="btn btn-primary" type="submit">Verify</button>
+                </div>
+            </form>
+
+            {% if error %}
+                <div class="alert alert-danger mt-3 mb-0">{{ error }}</div>
+            {% endif %}
+
+            {% if certificate %}
+                <div class="mt-4">
+                    <div class="alert alert-success" style="border-radius: var(--radius-sm);">
+                        <strong>Valid certificate found.</strong>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Certificate Number</div>
+                                <div style="font-weight: 800;">{{ certificate.certificate_number }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Issued Date</div>
+                                <div style="font-weight: 800;">{{ certificate.issued_date|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Recipient</div>
+                                <div style="font-weight: 800;">{{ certificate.name|default:certificate.user.get_full_name|default:certificate.user.username }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Exam</div>
+                                <div style="font-weight: 800;">{{ certificate.exam.name }}</div>
+                            </div>
+                        </div>
+                        {% if certificate.institution %}
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Institution</div>
+                                <div style="font-weight: 800;">{{ certificate.institution }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if certificate.score %}
+                        <div class="col-12 col-md-6">
+                            <div class="p-3" style="border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);">
+                                <div style="color: var(--muted); font-size: 12px;">Score</div>
+                                <div style="font-weight: 800;">{{ certificate.score|floatformat:0 }}%</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

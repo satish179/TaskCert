@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+db.sqlite3
+.DS_Store
+.env
+venv
+env
+staticfiles
+staticfiles_build
+*.log
+.vscode
+.idea
+deliverables/

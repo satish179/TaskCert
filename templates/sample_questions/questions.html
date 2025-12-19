@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% load custom_filters %}
+{% block title %}Sample Questions - {{ topic.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">{{ topic.name }}</h1>
+                    <p class="text-muted mb-0">{{ topic.description }}</p>
+                    <small class="text-muted">{{ questions|length }} sample questions available</small>
+                </div>
+                <div>
+                    <a href="{% url 'sample_questions_topics' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Back to Topics
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Questions List -->
+            {% if questions %}
+                <div class="questions-container">
+                    {% for question in questions %}
+                        <div class="question-card mb-4">
+                            <div class="question-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h5 class="question-title mb-2">
+                                            <span class="question-number">{{ forloop.counter }}.</span>
+                                            {{ question.question_text }}
+                                        </h5>
+                                        <div class="question-meta">
+                                            <span class="badge bg-secondary me-2">{{ question.get_question_type_display }}</span>
+                                            <span class="badge bg-info">{{ question.get_difficulty_level_display }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="question-content">
+                                {% if question.question_type == 'multiple_choice' and question.options %}
+                                    <div class="options-list mb-3">
+                                        {% for option in question.options %}
+                                            <div class="option-item {% if option == question.correct_answer %}correct-answer{% endif %}">
+                                                <span class="option-label">{{ forloop.counter|add:64|to_chr }}.</span>
+                                                <span class="option-text">{{ option }}</span>
+                                                {% if option == question.correct_answer %}
+                                                    <i class="fas fa-check-circle text-success ms-2"></i>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% elif question.question_type == 'true_false' %}
+                                    <div class="options-list mb-3">
+                                        <div class="option-item {% if 'True' == question.correct_answer %}correct-answer{% endif %}">
+                                            <span class="option-label">A.</span>
+                                            <span class="option-text">True</span>
+                                            {% if 'True' == question.correct_answer %}
+                                                <i class="fas fa-check-circle text-success ms-2"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="option-item {% if 'False' == question.correct_answer %}correct-answer{% endif %}">
+                                            <span class="option-label">B.</span>
+                                            <span class="option-text">False</span>
+                                            {% if 'False' == question.correct_answer %}
+                                                <i class="fas fa-check-circle text-success ms-2"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="correct-answer-box mb-3">
+                                        <strong>Answer:</strong> {{ question.correct_answer }}
+                                    </div>
+                                {% endif %}
+
+                                {% if question.explanation %}
+                                    <div class="explanation-box">
+                                        <strong><i class="fas fa-lightbulb"></i> Explanation:</strong>
+                                        <p class="mb-0 mt-2">{{ question.explanation }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Questions Available</h4>
+                    <p class="text-muted">Sample questions for this topic will be added soon.</p>
+                    <a href="{% url 'sample_questions_topics' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Choose Another Topic
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.questions-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.question-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.question-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.question-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.question-title {
+    color: #2c3e50;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.question-number {
+    color: #667eea;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.question-meta {
+    margin-top: 8px;
+}
+
+.question-content {
+    padding: 20px;
+}
+
+.options-list {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.option-item.correct-answer {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    font-weight: 600;
+}
+
+.option-item:hover {
+    background: #f8f9fa;
+}
+
+.option-label {
+    font-weight: 600;
+    color: #495057;
+    margin-right: 12px;
+    min-width: 20px;
+}
+
+.option-text {
+    flex-grow: 1;
+}
+
+.correct-answer-box {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 16px;
+    color: #155724;
+    font-weight: 500;
+}
+
+.explanation-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 16px;
+    color: #856404;
+}
+
+.explanation-box strong {
+    color: #856404;
+}
+
+@media (max-width: 768px) {
+    .question-header {
+        padding: 16px;
+    }
+
+    .question-content {
+        padding: 16px;
+    }
+
+    .options-list {
+        padding: 12px;
+    }
+}
+</style>
+{% endblock %}

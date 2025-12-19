@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-$vx&qv-v5w$xh64t%gi)$tmf0tfr_*48jnx5dmqmk3&yw9_8jm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app', '.now.sh']
+ALLOWED_HOSTS = ['*']
 
 # CSRF settings for development
 CSRF_COOKIE_SECURE = False
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,11 +96,15 @@ DATABASES = {
 
 if 'VERCEL' in os.environ:
     # Use Postgres on Vercel to avoid sqlite3 missing module error
-    DATABASES['default'] = dj_database_url.config(
-        default='postgres://postgres:password@localhost:5432/postgres',
-        conn_max_age=600
-    )
-elif 'sqlite' in str(DATABASES['default']):
+    # Use a real DB if provided, else fallback to dummy to prevent startup crash
+    db_from_env = dj_database_url.config(conn_max_age=600)
+    if db_from_env:
+        DATABASES['default'].update(db_from_env)
+    else:
+        # No DB present? Use dummy to show Django startup page instead of crash
+        DATABASES['default'] = {'ENGINE': 'django.db.backends.dummy'}
+
+elif 'sqlite' in str(DATABASES['default'].get('ENGINE', '')):
     # Default local callback
     DATABASES = {
         'default': {

@@ -280,9 +280,10 @@
     {% if not user.is_staff %}
     <!-- Exam Modal -->
     <div class="modal fade" id="examModal{{ exam.id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
-        aria-hidden="true" style="pointer-events: auto;">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="pointer-events: auto;">
-            <div class="modal-content" style="pointer-events: auto;">
+        aria-hidden="true" style="pointer-events: auto !important; z-index: 1055 !important;">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable"
+            style="pointer-events: auto !important; z-index: 1060 !important;">
+            <div class="modal-content" style="pointer-events: auto !important; z-index: 1070 !important;">
                 <div class="modal-header"
                     style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white;">
                     <div style="flex: 1;">

@@ -495,7 +495,12 @@
             } else {
                 text = await resp.text();
                 // Best-effort JSON parse (covers cases where backend sends JSON without proper header).
-                try { data = JSON.parse(text); } catch (_) { }
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    // If not JSON, use text as error detail (truncated)
+                    data = { error: text.substring(0, 300) + (text.length > 300 ? '...' : '') };
+                }
             }
 
             return { ok: resp.ok, status: resp.status, data, text };

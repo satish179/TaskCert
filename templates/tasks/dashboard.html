@@ -282,13 +282,24 @@
         </div>
     </div>
 
-    <a href="/certificates/" class="stat-card-creative text-decoration-none">
+    <div class="stat-card-creative">
         <div class="stat-icon-box info">
             <i class="fas fa-certificate"></i>
         </div>
         <div>
             <div class="h3 fw-bold mb-0 text-dark">{{ certificates_count }}</div>
             <div class="text-secondary small fw-bold text-uppercase ls-1">Certificates</div>
+        </div>
+    </div>
+
+    <!-- Gamification Points Card -->
+    <a href="{% url 'leaderboard' %}" class="stat-card-creative text-decoration-none">
+        <div class="stat-icon-box warning"> <!-- Reusing warning color or picking a new one like gold -->
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div>
+            <div class="h3 fw-bold mb-0 text-dark">{{ user.points }}</div>
+            <div class="text-secondary small fw-bold text-uppercase ls-1">Points</div>
         </div>
     </a>
 </div>

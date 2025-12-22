@@ -89,7 +89,7 @@ import os
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.peek', # Placeholder to avoid load
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
@@ -99,18 +99,6 @@ if 'VERCEL' in os.environ or os.environ.get('DATABASE_URL'):
     db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
     if db_from_env:
         DATABASES['default'] = db_from_env
-    else:
-        # No DB present? Use dummy to show Django startup page instead of crash
-        DATABASES['default'] = {'ENGINE': 'django.db.backends.dummy'}
-
-elif 'sqlite' in str(DATABASES['default'].get('ENGINE', '')):
-    # Default local callback
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
 
 
 # Password validation

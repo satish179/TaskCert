@@ -11,3 +11,5 @@ staticfiles_build
 .vscode
 .idea
 deliverables/
+media/
+*.env

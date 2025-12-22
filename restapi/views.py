@@ -15,7 +15,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Mentor, Task, Submission, Exam, Question, Result, Certificate, Topic, SampleQuestion, ExamAttempt, UserActivityLog
+from .models import Mentor, Task, Submission, Exam, Question, Result, Certificate, Topic, SampleQuestion, ExamAttempt, UserActivityLog, CustomUser, Resource, ForumPost, ForumComment
+
+@login_required
+def leaderboard_view(request):
+    # Fetch top 20 users by points
+    leaders = CustomUser.objects.filter(role='user').order_by('-points')[:20]
+    return render(request, 'leaderboard.html', {'leaders': leaders})
+
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, MentorSerializer,
     TaskSerializer, SubmissionSerializer, ExamSerializer,
@@ -265,13 +272,6 @@ class ResultViewSet(viewsets.ModelViewSet):
             exam = Exam.objects.get(id=exam_id)
         except Exam.DoesNotExist:
             return Response({'error': 'Exam not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # Enforce the same gating as the template view
-        user_tasks = Task.objects.filter(assigned_to=request.user)
-        completed_tasks = user_tasks.filter(status='completed')
-        has_completed_all_tasks = user_tasks.exists() and user_tasks.count() == completed_tasks.count()
-        if not has_completed_all_tasks:
-            return Response({'error': 'Complete all tasks to access exams.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Enforce assignment: if exam is assigned to someone, only they can start it
         if exam.assigned_to_id and exam.assigned_to_id != request.user.id:
@@ -811,14 +811,12 @@ def dashboard_view(request):
     # If user is mentor/staff (but not platform admin), redirect to mentor dashboard
     if request.user.is_staff:
         return redirect('/mentor-dashboard/')
-    # Prefer showing the in-progress task(s). If none, show the next pending task only
-    in_progress = Task.objects.filter(assigned_to=request.user, status='in_progress')
-    if in_progress.exists():
-        current_tasks = in_progress
-    else:
-        # pick the next pending task (earliest created)
-        next_pending = Task.objects.filter(assigned_to=request.user, status='pending').order_by('created_at')[:1]
-        current_tasks = next_pending
+    
+    # Show ALL active tasks (pending or in_progress) so students always see what is assigned
+    current_tasks = Task.objects.filter(
+        assigned_to=request.user, 
+        status__in=['pending', 'in_progress']
+    ).order_by('due_date', 'created_at')
 
     completed_tasks = Task.objects.filter(assigned_to=request.user, status='completed')
     recent_submissions = Submission.objects.filter(submitted_by=request.user).order_by('-submitted_at')[:5]
@@ -847,16 +845,9 @@ def exams_view(request):
     if request.user.is_staff:
         return redirect('/mentor-dashboard/')
     
-    # Check if user has completed all their assigned tasks
-    user_tasks = Task.objects.filter(assigned_to=request.user)
-    completed_tasks = user_tasks.filter(status='completed')
-    has_completed_all_tasks = user_tasks.exists() and user_tasks.count() == completed_tasks.count()
-
-    if has_completed_all_tasks:
-        from django.db.models import Q
-        exams = Exam.objects.filter(Q(assigned_to__isnull=True) | Q(assigned_to=request.user))
-    else:
-        exams = Exam.objects.none()
+    # Allow all assigned exams or public exams to be visible
+    from django.db.models import Q
+    exams = Exam.objects.filter(Q(assigned_to__isnull=True) | Q(assigned_to=request.user))
 
     attempt_counts = {}
     recent_attempts = []
@@ -869,7 +860,7 @@ def exams_view(request):
 
     context = {
         'exams': exams,
-        'has_completed_all_tasks': has_completed_all_tasks,
+        'has_completed_all_tasks': True, # Always show exam section
         'attempt_counts': attempt_counts,
         'recent_attempts': recent_attempts,
     }
@@ -915,12 +906,11 @@ def verify_certificate_view(request):
 
 @login_required(login_url='/login/')
 def my_tasks_view(request):
-    # Show only the active task (in-progress) or the next pending task
-    in_progress = Task.objects.filter(assigned_to=request.user, status='in_progress')
-    if in_progress.exists():
-        current_tasks = in_progress
-    else:
-        current_tasks = Task.objects.filter(assigned_to=request.user, status='pending').order_by('created_at')[:1]
+    # Show ALL active tasks (pending or in_progress)
+    current_tasks = Task.objects.filter(
+        assigned_to=request.user, 
+        status__in=['pending', 'in_progress']
+    ).order_by('due_date', 'created_at')
 
     completed_tasks = Task.objects.filter(assigned_to=request.user, status='completed')
 
@@ -1047,7 +1037,7 @@ def manage_submissions_view(request):
     pending_reviews = submissions.filter(status='submitted').count()
     approved_count = submissions.filter(status='approved').count()
     # Calculate average score for approved submissions
-    approved_scores = submissions.filter(status='approved').values_list('score', flat=True)
+    approved_scores = submissions.filter(status='approved', score__isnull=False).values_list('score', flat=True)
     avg_score = sum(approved_scores) / len(approved_scores) if approved_scores else 0
 
     context = {
@@ -1153,6 +1143,7 @@ def submit_task_view(request, task_id):
     
     context = {
         'task': task,
+        'is_overdue': timezone.now() > task.due_date,
     }
     return render(request, 'tasks/submit_task.html', context)
 
@@ -1756,3 +1747,93 @@ def activity_log_view(request):
         'selected_user_id': int(user_id) if user_id else None,
         'selected_date': date_str
     })
+
+# ==========================================
+# RESOURCE LIBRARY VIEWS
+# ==========================================
+
+@login_required(login_url='/login/')
+def resource_library_view(request):
+    resources = Resource.objects.all().order_by('-created_at')
+    return render(request, 'resources/library.html', {'resources': resources})
+
+@login_required(login_url='/login/')
+def upload_resource_view(request):
+    # Only staff (mentors/admins) can upload
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to upload resources.')
+        return redirect('resource_library')
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        file = request.FILES.get('file')
+
+        if not title or not file:
+            messages.error(request, 'Title and File are required.')
+            return redirect('upload_resource')
+
+        try:
+            Resource.objects.create(
+                title=title,
+                description=description,
+                file=file,
+                uploaded_by=request.user
+            )
+            messages.success(request, 'Resource uploaded successfully!')
+            return redirect('resource_library')
+        except Exception as e:
+            messages.error(request, f'Error uploading resource: {str(e)}')
+            return redirect('upload_resource')
+
+    return render(request, 'resources/upload_resource.html')
+
+
+# ==========================================
+# COMMUNITY FORUM VIEWS
+# ==========================================
+
+@login_required(login_url='/login/')
+def forum_index_view(request):
+    posts = ForumPost.objects.all().order_by('-created_at')
+    return render(request, 'forum/index.html', {'posts': posts})
+
+@login_required(login_url='/login/')
+def create_post_view(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        
+        if title and content:
+            post = ForumPost.objects.create(
+                title=title,
+                content=content,
+                author=request.user
+            )
+            messages.success(request, 'Discussion started successfully!')
+            return redirect('forum_index')
+        else:
+            messages.error(request, 'Title and content are required.')
+            
+    return render(request, 'forum/create_post.html')
+
+@login_required(login_url='/login/')
+def post_detail_view(request, post_id):
+    from django.shortcuts import get_object_or_404
+    post = get_object_or_404(ForumPost, id=post_id)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            ForumComment.objects.create(
+                post=post,
+                author=request.user,
+                content=content
+            )
+            messages.success(request, 'Comment posted!')
+            return redirect('post_detail', post_id=post.id)
+        else:
+            messages.error(request, 'Comment cannot be empty.')
+            
+    return render(request, 'forum/post_detail.html', {'post': post})
+

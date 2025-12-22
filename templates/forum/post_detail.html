@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }} - Community Forum{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <a href="{% url 'forum_index' %}" class="text-decoration-none text-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Forum
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h2 class="class fw-bold mb-3">{{ post.title }}</h2>
+            <div class="d-flex align-items-center mb-4">
+                <div class="avatar-circle me-2 bg-primary text-white d-flex align-items-center justify-content-center"
+                    style="width: 32px; height: 32px; border-radius: 50%;">
+                    {{ post.author.username|make_list|first|upper }}
+                </div>
+                <div class="lh-1">
+                    <div class="fw-bold">{{ post.author.get_full_name|default:post.author.username }}</div>
+                    <small class="text-muted">{{ post.created_at|date:"F j, Y, P" }}</small>
+                </div>
+            </div>
+
+            <div class="post-content fs-5 mb-4">
+                {{ post.content|linebreaks }}
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3"><i class="far fa-comments me-2"></i>Comments ({{ post.comments.count }})</h4>
+
+    {% for comment in post.comments.all %}
+    <div class="card mb-3 shadow-sm border-0 bg-light">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+                <div class="d-flex align-items-center">
+                    <div class="fw-bold me-2">{{ comment.author.get_full_name|default:comment.author.username }}</div>
+                    <span class="badge bg-secondary opacity-50">{{ comment.author.role|default:"User"|title }}</span>
+                </div>
+                <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+            </div>
+            <p class="mb-0">{{ comment.content|linebreaksbr }}</p>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted fst-italic mb-4">No comments yet. Be the first to reply!</p>
+    {% endfor %}
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Leave a Reply</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <textarea class="form-control" name="content" rows="4" placeholder="Type your comment here..."
+                        required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i> Post Comment
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

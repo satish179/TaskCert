@@ -114,6 +114,15 @@
                     href="/sample-questions/">
                     <i class="fas fa-book w-auto text-center" style="min-width: 24px;"></i> Practice
                 </a>
+                <a class="nav-link {% if request.path == '/leaderboard/' %}active{% endif %}" href="/leaderboard/">
+                    <i class="fas fa-trophy w-auto text-center" style="min-width: 24px;"></i> Leaderboard
+                </a>
+                <a class="nav-link {% if request.path == '/resources/' %}active{% endif %}" href="/resources/">
+                    <i class="fas fa-book-reader w-auto text-center" style="min-width: 24px;"></i> Resources
+                </a>
+                <a class="nav-link {% if request.path == '/forum/' %}active{% endif %}" href="/forum/">
+                    <i class="fas fa-comments w-auto text-center" style="min-width: 24px;"></i> Forum
+                </a>
                 {% else %}
                 <a class="nav-link {% if request.path == '/mentor-dashboard/' %}active{% endif %}"
                     href="/mentor-dashboard/">
@@ -145,6 +154,15 @@
                 <a class="nav-link {% if request.path == '/manage-certificates/' %}active{% endif %}"
                     href="/manage-certificates/">
                     <i class="fas fa-certificate w-auto text-center" style="min-width: 24px;"></i> Certificates
+                </a>
+                <a class="nav-link {% if request.path == '/leaderboard/' %}active{% endif %}" href="/leaderboard/">
+                    <i class="fas fa-trophy w-auto text-center" style="min-width: 24px;"></i> Leaderboard
+                </a>
+                <a class="nav-link {% if request.path == '/resources/' %}active{% endif %}" href="/resources/">
+                    <i class="fas fa-book-reader w-auto text-center" style="min-width: 24px;"></i> Resources
+                </a>
+                <a class="nav-link {% if request.path == '/forum/' %}active{% endif %}" href="/forum/">
+                    <i class="fas fa-comments w-auto text-center" style="min-width: 24px;"></i> Forum
                 </a>
                 {% endif %}
             </nav>

@@ -8,6 +8,7 @@ class CustomUser(AbstractUser):
         ('user', 'User'),
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+    points = models.PositiveIntegerField(default=0)
     mentor = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     certificate_id = models.CharField(max_length=20, unique=True, blank=True, help_text="Unique user ID for certificates")
 
@@ -63,6 +64,35 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+class Resource(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='resources/')
+    uploaded_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='uploaded_resources')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class ForumPost(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='forum_posts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+class ForumComment(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='forum_comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.post.title}"
 
 class Submission(models.Model):
     STATUS_CHOICES = [

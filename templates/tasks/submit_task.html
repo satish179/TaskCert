@@ -74,21 +74,15 @@
                                     <div class="form-group">
                                         <label class="form-label"><strong>Due Date (Fixed by Mentor)</strong></label>
                                         <div class="form-control-plaintext">
-                                            {% now "U" as now_timestamp %}
-                                            {% with due_timestamp=task.due_date|date:"U" %}
-                                            {% if due_timestamp|add:"0" > now_timestamp|add:"0" %}
-                                            <span class="badge bg-success"><i class="fas fa-clock"></i> {{
-                                                task.due_date|date:"M d, Y H:i" }}</span>
+                                            {% if not is_overdue %}
+                                            <span class="badge bg-success"><i class="fas fa-clock"></i> {{ task.due_date|date:"M d, Y H:i" }}</span>
                                             <br>
-                                            <small class="text-muted">⏱️ Time remaining: {{ task.due_date|timeuntil
-                                                }}</small>
+                                            <small class="text-muted">⏱️ Time remaining: {{ task.due_date|timeuntil }}</small>
                                             {% else %}
-                                            <span class="badge bg-danger"><i class="fas fa-exclamation"></i> {{
-                                                task.due_date|date:"M d, Y H:i" }} (OVERDUE)</span>
+                                            <span class="badge bg-danger"><i class="fas fa-exclamation"></i> {{ task.due_date|date:"M d, Y H:i" }} (OVERDUE)</span>
                                             <br>
                                             <small class="text-danger"><strong>⚠️ This task is overdue!</strong></small>
                                             {% endif %}
-                                            {% endwith %}
                                         </div>
                                     </div>
                                 </div>

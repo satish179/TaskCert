@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Resource Library - Task Certification Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-book-reader"></i> Resource Library</h2>
+        {% if user.is_staff %}
+        <a href="{% url 'upload_resource' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Upload Resource
+        </a>
+        {% endif %}
+    </div>
+
+    {% if resources %}
+    <div class="row mt-4">
+        {% for resource in resources %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-shadow transition-all">
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-light p-3 rounded me-3">
+                            <i class="fas fa-file-alt fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-1">{{ resource.title }}</h5>
+                            <small class="text-muted">Uploaded by {{ resource.uploaded_by.get_full_name|default:resource.uploaded_by.username }}</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-secondary">{{ resource.description|default:"No description provided."|truncatewords:20 }}</p>
+                </div>
+                <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center pb-3">
+                    <small class="text-muted"><i class="far fa-clock"></i> {{ resource.created_at|date:"M d, Y" }}</small>
+                    <a href="{{ resource.file.url }}" class="btn btn-outline-primary btn-sm" download>
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3 text-muted display-1 opacity-25">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h4>No Resources Found</h4>
+        <p class="text-muted">Check back later or ask your mentor to upload materials.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

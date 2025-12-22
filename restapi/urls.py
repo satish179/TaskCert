@@ -11,7 +11,9 @@ from .views import (
     submit_task_view, review_submission_view, assign_tasks_view, mentor_dashboard_view,
     sample_questions_topics_view, sample_questions_view, verify_certificate_view,
     create_exam_view, add_questions_view, delete_question_view,
-    edit_exam_view, delete_exam_view, edit_question_view, activity_log_view
+    edit_exam_view, delete_exam_view, edit_question_view, activity_log_view,
+    leaderboard_view, resource_library_view, upload_resource_view,
+    forum_index_view, create_post_view, post_detail_view
 )
 
 router = DefaultRouter()
@@ -41,6 +43,12 @@ urlpatterns = [
     # Task and Submission specific routes (must come before generic api/ pattern)
     path('tasks/<int:task_id>/submit/', submit_task_view, name='submit_task'),
     path('submissions/<int:submission_id>/review/', review_submission_view, name='review_submission'),
+    path('leaderboard/', leaderboard_view, name='leaderboard'),
+    path('resources/', resource_library_view, name='resource_library'),
+    path('resources/upload/', upload_resource_view, name='upload_resource'),
+    path('forum/', forum_index_view, name='forum_index'),
+    path('forum/create/', create_post_view, name='create_post'),
+    path('forum/<int:post_id>/', post_detail_view, name='post_detail'),
     
     # Template-based views - User continued
     path('my-tasks/', my_tasks_view, name='my_tasks'),

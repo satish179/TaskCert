@@ -196,6 +196,129 @@
             flex-direction: column;
         }
     }
+
+    /* Proctor Mode Styles */
+    :root {
+        --proctor-bg: #0f172a;
+        --proctor-text: #f8fafc;
+        --proctor-surface: #1e293b;
+        --proctor-border: #334155;
+    }
+
+    body.proctor-active {
+        overflow: hidden;
+        user-select: none;
+        /* Disable text selection */
+        -webkit-user-select: none;
+    }
+
+    /* Full screen modal overrides */
+    body.proctor-active .modal-fullscreen-proctor {
+        padding: 0 !important;
+        background: var(--proctor-bg) !important;
+    }
+
+    body.proctor-active .modal-fullscreen-proctor .modal-dialog {
+        width: 100vw;
+        max-width: none;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+    }
+
+    body.proctor-active .modal-fullscreen-proctor .modal-content {
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        background: var(--proctor-bg) !important;
+        color: var(--proctor-text);
+    }
+
+    body.proctor-active .modal-header {
+        background: var(--proctor-surface) !important;
+        border-bottom: 1px solid var(--proctor-border);
+        padding: 1rem 2rem;
+    }
+
+    body.proctor-active .modal-body {
+        background: var(--proctor-bg) !important;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    body.proctor-active .modal-footer {
+        background: var(--proctor-surface) !important;
+        border-top: 1px solid var(--proctor-border);
+        justify-content: center;
+        padding: 1.5rem;
+    }
+
+    /* Question Styling in Proctor Mode */
+    body.proctor-active .card {
+        background: var(--proctor-surface) !important;
+        border: 1px solid var(--proctor-border) !important;
+        color: var(--proctor-text) !important;
+    }
+
+    body.proctor-active .form-control,
+    body.proctor-active textarea {
+        background: #020617 !important;
+        border: 1px solid var(--proctor-border) !important;
+        color: #f8fafc !important;
+        font-size: 1.1rem;
+    }
+
+    body.proctor-active .form-control:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+    }
+
+    body.proctor-active label {
+        background: #020617 !important;
+        border-color: var(--proctor-border) !important;
+    }
+
+    body.proctor-active label:hover {
+        border-color: var(--primary) !important;
+    }
+
+    /* Warning Overlay */
+    #proctorWarningOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(220, 38, 38, 0.95);
+        z-index: 10000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+    }
+
+    .warning-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -426,8 +549,11 @@
 <script>
     let timers = {};
     let attemptIds = {};
-    let examExpiresAt = {};
-    let activeControllers = {};
+    // Proctoring Global State
+    let isProctorActive = false;
+    let warningCount = 0;
+    const MAX_WARNINGS = 3;
+    let warningTimeout = null;
 
     // Debug logging intentionally disabled for end-users.
     const EXAM_DEBUG = false;
@@ -436,6 +562,173 @@
         if (!EXAM_DEBUG) return;
         console.log(`[Exam ${examId}] ${message}`);
     }
+
+    // --- Proctoring Functions ---
+
+    function enterProctorMode(examId) {
+        isProctorActive = true;
+        warningCount = 0;
+        document.body.classList.add('proctor-active');
+
+        const modal = document.getElementById('examModal' + examId);
+        if (modal) {
+            modal.classList.add('modal-fullscreen-proctor');
+            // Auto-exit proctor mode when modal closes
+            modal.addEventListener('hidden.bs.modal', () => exitProctorMode(examId), { once: true });
+        }
+
+        // Create Warning Overlay if not exists
+        if (!document.getElementById('proctorWarningOverlay')) {
+            const overlay = document.createElement('div');
+            overlay.id = 'proctorWarningOverlay';
+            overlay.innerHTML = `
+                <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h1 class="display-4 fw-bold">PROCTOR WARNING</h1>
+                <p class="h4 mt-3">Malpractice Detected!</p>
+                <p class="mt-2 lead">Please return to the exam window immediately.</p>
+                <p class="mt-4">Warnings: <span id="warningCountDisplay">0</span>/${MAX_WARNINGS}</p>
+                <button class="btn btn-light btn-lg mt-4 fw-bold" onclick="dismissWarning()">I Understand - Return to Exam</button>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Add Event Listeners
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('blur', handleWindowBlur);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        // Disable Interactions
+        document.addEventListener('contextmenu', preventDefault);
+        document.addEventListener('copy', preventDefault);
+        document.addEventListener('paste', preventDefault);
+        document.addEventListener('cut', preventDefault);
+        document.addEventListener('keydown', handleKeydown);
+
+        // Request Full Screen
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        }
+    }
+
+    function exitProctorMode(examId) {
+        isProctorActive = false;
+        document.body.classList.remove('proctor-active');
+
+        const modal = document.getElementById('examModal' + examId);
+        if (modal) {
+            modal.classList.remove('modal-fullscreen-proctor');
+        }
+
+        // Remove Overlay
+        const overlay = document.getElementById('proctorWarningOverlay');
+        if (overlay) overlay.remove();
+
+        // Remove Listeners
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('blur', handleWindowBlur);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+
+        document.removeEventListener('contextmenu', preventDefault);
+        document.removeEventListener('copy', preventDefault);
+        document.removeEventListener('paste', preventDefault);
+        document.removeEventListener('cut', preventDefault);
+        document.removeEventListener('keydown', handleKeydown);
+
+        // Exit Full Screen
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(err => console.log(err));
+        }
+    }
+
+    function triggerWarning(reason) {
+        if (!isProctorActive) return;
+
+        warningCount++;
+        const display = document.getElementById('warningCountDisplay');
+        if (display) display.textContent = warningCount;
+
+        const overlay = document.getElementById('proctorWarningOverlay');
+        if (overlay) overlay.style.display = 'flex';
+
+        console.log(`[PROCTOR] Warning triggered: ${reason}. Count: ${warningCount}`);
+
+        if (warningCount >= MAX_WARNINGS) {
+            terminateExam("Maximum malpractice warnings exceeded.");
+        }
+    }
+
+    window.dismissWarning = function () {
+        const overlay = document.getElementById('proctorWarningOverlay');
+        if (overlay) overlay.style.display = 'none';
+
+        // Re-enforce full screen if they left
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        }
+    };
+
+    function terminateExam(reason) {
+        isProctorActive = false;
+        alert(`EXAM TERMINATED: ${reason}`);
+
+        // Find active exam ID
+        const activeId = Object.keys(activeControllers)[0]?.replace('start-', ''); // Crude, better to track activeExamId globally
+        if (activeId) {
+            submitExam(activeId);
+            exitProctorMode(activeId);
+        } else {
+            // Fallback: try to find any open modal's ID
+            location.reload();
+        }
+    }
+
+    // --- Event Handlers ---
+
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            triggerWarning("Tab switching detected");
+        }
+    }
+
+    function handleWindowBlur() {
+        // Debounce simple clicks outside
+        setTimeout(() => {
+            if (document.activeElement === document.body) {
+                // Only trigger if focus is genuinely lost (e.g. alt-tab)
+                // This is tricky, sometimes clicking an iframe triggers blur.
+                // We'll stick to visibilityChange for strong navigation checks.
+            }
+        }, 100);
+    }
+
+    function handleFullscreenChange() {
+        if (!document.fullscreenElement && isProctorActive) {
+            triggerWarning("Exited full screen mode");
+        }
+    }
+
+    function preventDefault(e) {
+        e.preventDefault();
+        return false;
+    }
+
+    function handleKeydown(e) {
+        // Prevent Alt+Tab, Win keys, F11, etc. where possible
+        if ((e.altKey && e.key === 'Tab') ||
+            (e.metaKey) ||
+            (e.key === 'F11') ||
+            (e.ctrlKey && e.key === 'c') ||
+            (e.ctrlKey && e.key === 'v')) {
+
+            e.preventDefault();
+            // Optional: trigger warning for blatant key combos
+        }
+    }
+
+    // --- End Proctor Functions ---
 
     function cleanupModalArtifacts() {
         // Defensive cleanup: if a modal/backdrop gets stuck, the page can feel "frozen".
@@ -717,6 +1010,9 @@
         const timerElement = document.getElementById('timer' + examId);
         const modalEl = document.getElementById('examModal' + examId);
 
+        // Store active exam ID globally for proctoring
+        window.currentExamId = examId;
+
         if (timers[examId]) {
             clearInterval(timers[examId]);
         }
@@ -725,6 +1021,9 @@
 
         startExam(examId)
             .then(() => {
+                // START PROCTORING HERE
+                enterProctorMode(examId);
+
                 logDebug(examId, 'Timer initializing...');
                 const expiresAt = new Date(examExpiresAt[examId]);
                 logDebug(examId, `Expires At: ${expiresAt}`);
@@ -758,20 +1057,20 @@
             .catch(err => {
                 logDebug(examId, `Catch Error: ${err.message}`);
                 if (timerElement) timerElement.textContent = '00:00';
-                // If the exam fails to start, auto-close the modal so the user isn't trapped
-                // behind a static backdrop, and cleanup any stuck backdrop artifacts.
                 try {
                     if (modalEl && window.bootstrap && window.bootstrap.Modal) {
                         window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
                     }
                 } catch (_) { }
                 cleanupModalArtifacts();
-                // Keep an alert as a fallback, but render errors in the modal body.
                 alert(err.message || 'Unable to start exam.');
             });
     }
 
     async function submitExam(examId) {
+        // EXIT PROCTORING HERE
+        exitProctorMode(examId);
+
         logDebug(examId, 'submitExam called.');
         const form = document.getElementById('examForm' + examId);
         const formData = new FormData(form);

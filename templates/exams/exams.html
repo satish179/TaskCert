@@ -280,9 +280,9 @@
     {% if not user.is_staff %}
     <!-- Exam Modal -->
     <div class="modal fade" id="examModal{{ exam.id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
+        aria-hidden="true" style="pointer-events: auto;">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="pointer-events: auto;">
+            <div class="modal-content" style="pointer-events: auto;">
                 <div class="modal-header"
                     style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white;">
                     <div style="flex: 1;">

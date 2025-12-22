@@ -600,6 +600,9 @@
                     input.style.background = 'var(--surface)';
                     input.style.color = 'var(--text)';
                     input.style.border = '1px solid var(--border)';
+                    input.style.pointerEvents = 'auto';
+                    input.style.position = 'relative';
+                    input.style.zIndex = '1';
 
                     body.appendChild(input);
                 } else {
@@ -610,15 +613,21 @@
                         label.style.cursor = 'pointer';
                         label.style.marginBottom = '0.5rem';
                         label.style.background = 'var(--surface)';
+                        label.style.pointerEvents = 'auto';
+                        label.style.position = 'relative';
+                        label.style.zIndex = '1';
 
                         const input = document.createElement('input');
                         input.type = 'radio';
                         input.name = `q${q.id}`;
                         input.value = opt;
                         input.style.marginTop = '4px';
+                        input.style.pointerEvents = 'auto';
+                        input.style.cursor = 'pointer';
 
                         const span = document.createElement('span');
                         span.style.color = 'var(--text)';
+                        span.style.pointerEvents = 'none';
                         span.textContent = opt;
 
                         label.appendChild(input);

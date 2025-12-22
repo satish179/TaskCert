@@ -332,6 +332,17 @@
                             Loading questions...
                             <div class="spinner-border text-primary mt-3" role="status"></div>
                         </div>
+
+                        <!-- Visual Debug Console -->
+                        <div class="mt-3 p-2 bg-light border rounded"
+                            style="font-size: 0.8rem; height: 150px; overflow-y: auto; display: none;"
+                            id="debugContainer{{ exam.id }}">
+                            <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
+                                <strong>Debug Console</strong>
+                                <small class="text-muted">v1.2</small>
+                            </div>
+                            <div id="debugConsole{{ exam.id }}" style="font-family: monospace; color: #333;"></div>
+                        </div>
                     </form>
                 </div>
 
@@ -424,14 +435,24 @@
     let examExpiresAt = {};
     let activeControllers = {};
 
-    // Debug logging intentionally disabled for end-users.
-    // Debug logging enabled for troubleshooting
+    // Debug logging intentionally enabled for troubleshooting
     const EXAM_DEBUG = true;
 
     function logDebug(examId, message) {
         if (!EXAM_DEBUG) return;
-        // If ever enabled for troubleshooting, use console only.
+        // Also log to console for dev tools
         console.log(`[Exam ${examId}] ${message}`);
+
+        // Append to visual debug console if it exists
+        const debugConsole = document.getElementById('debugConsole' + examId);
+        if (debugConsole) {
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            entry.style.borderBottom = '1px solid #eee';
+            entry.style.padding = '2px 0';
+            debugConsole.appendChild(entry);
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
     }
 
     function cleanupModalArtifacts() {
@@ -627,6 +648,10 @@
 
         if (loading) loading.style.display = 'block';
         if (container) container.innerHTML = '';
+
+        // Show debug console
+        const debugContainer = document.getElementById('debugContainer' + examId);
+        if (debugContainer) debugContainer.style.display = 'block';
 
         if (!csrf) {
             if (loading) loading.style.display = 'none';

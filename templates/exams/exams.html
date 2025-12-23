@@ -18,31 +18,31 @@
         {% for exam in exams %}
         <div class="col">
             <div class="card h-100 border-0 shadow-sm hover-up transition-all">
-                <!-- Card Header: Strict Vertical Stack -->
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
+                <!-- Card Header: Vertical Stack with enforced spacing to prevent overlap -->
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
                     <!-- Line 1: Badge -->
-                    <div class="mb-2">
+                    <div class="mb-3">
                         <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
                             <i class="fas fa-graduation-cap me-1"></i> Exam
                         </span>
                     </div>
 
                     <!-- Line 2: Date -->
-                    <div class="mb-2">
-                        <small class="text-muted fw-bold">
+                    <div class="mb-3">
+                        <small class="text-muted fw-bold d-block">
                             <i class="far fa-calendar-alt me-1"></i> {{ exam.created_at|date:"M d, Y" }}
                         </small>
                     </div>
 
                     <!-- Line 3: Title -->
-                    <h5 class="card-title fw-bold text-dark mb-2" style="min-height: 3rem; line-height: 1.4;">
+                    <h5 class="card-title fw-bold text-dark mb-3" style="min-height: 3rem; line-height: 1.4;">
                         {{ exam.name }}
                     </h5>
 
                     <!-- Line 4: Author -->
-                    <div class="d-flex align-items-center text-muted small">
+                    <div class="d-flex align-items-center text-muted small mb-2">
                         <i class="fas fa-user-circle me-2"></i>
-                        <span class="ms-1">
+                        <span class="fw-bold">
                             By {{ exam.created_by.name }}
                         </span>
                     </div>

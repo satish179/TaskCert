@@ -213,11 +213,23 @@ class ExamManager {
             // Short answer
             html += `
                 <textarea class="form-control" rows="5" placeholder="Type your answer here..." 
-                    onchange="examManager.saveAnswer('${q.id}', this.value)">${savedAnswer}</textarea>
+                    data-question-id="${q.id}">${savedAnswer}</textarea>
             `;
         }
 
+        // Update container
         this.elements.questionArea.innerHTML = html;
+
+        // Re-attach event listeners for the new inputs (or rely on delegation if we set it up)
+        // For simplicity/robustness, we'll attach to the container now if not already done, 
+        // BUT actually, attaching to the inputs directly after render is safer to avoid duplicates
+        const inputs = this.elements.questionArea.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                const qId = e.target.name ? e.target.name.replace('q_', '') : e.target.dataset.questionId;
+                this.saveAnswer(qId, e.target.value);
+            });
+        });
 
         this.updatePalette();
         this.updateButtons();

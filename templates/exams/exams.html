@@ -87,7 +87,7 @@
                             {% for attempt in recent_attempts %}
                             <tr>
                                 <td class="ps-4 fw-bold">{{ attempt.exam.name }}</td>
-                                <td class="text-muted">{{ attempt.completed_at|date:"M d, Y H:i" }}</td>
+                                <td class="text-muted">{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
                                 <td class="text-center">
                                     {% with res=attempt.result_set.first %}
                                     {% if res %}
@@ -103,7 +103,7 @@
                                 <td class="text-center">
                                     {% if attempt.disqualified %}
                                     <span class="badge bg-dark">DISQUALIFIED</span>
-                                    {% elif attempt.completed_at %}
+                                    {% elif attempt.submitted_at %}
                                     <span class="text-success"><i class="fas fa-check-circle"></i> Completed</span>
                                     {% else %}
                                     <span class="text-warning"><i class="fas fa-exclamation-circle"></i>

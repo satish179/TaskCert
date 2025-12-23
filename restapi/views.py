@@ -896,7 +896,7 @@ def exam_result_view(request, attempt_id):
         'score': score,
         'passed': passed,
         'total_questions': total_questions,
-        'status': 'Completed' if attempt.completed_at else 'Incomplete'
+        'status': 'Completed' if attempt.submitted_at else 'Incomplete'
     }
     return render(request, 'exams/result.html', context)
 

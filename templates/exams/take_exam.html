@@ -43,9 +43,6 @@
         </div>
         <div class="d-flex align-items-center gap-4">
             <div id="timer" class="fs-4 fw-bold font-monospace text-primary">Loading...</div>
-            <button class="btn btn-danger px-4 fw-bold submit-exam-btn shadow-sm">
-                <i class="fas fa-check-circle me-2"></i> Submit Exam
-            </button>
         </div>
     </div>
 
@@ -329,7 +326,39 @@
         }, 1000);
     }
 
-    async function submitExam() {
+    // Proctoring Logic
+    const WARNING_LIMIT = 3;
+    let warnings = 0;
+
+    function addWarning(reason) {
+        warnings++;
+        if (warnings >= WARNING_LIMIT) {
+            alert(`VIOLATION DETECTED: ${reason}\n\nExam Disqualified. Auto-submitting.`);
+            submitExam(true); // disqualified = true (handled in backend logic ideally, but for now just force submit)
+        } else {
+            alert(`WARNING (${warnings}/${WARNING_LIMIT}): ${reason}\n\nPlease stay in fullscreen and do not switch tabs.\n3 warnings = Disqualification.`);
+            // Force fullscreen back
+            try {
+                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => { });
+            } catch (e) { }
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && document.getElementById('introOverlay').style.display === 'none') {
+            addWarning("Tab Switch / Window Minimized");
+        }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && document.getElementById('introOverlay').style.display === 'none') {
+            addWarning("Exited Fullscreen Mode");
+        }
+    });
+
+    // ... (Existing timer/logic) ...
+
+    async function submitExam(disqualified = false) {
         clearInterval(STATE.timerInterval);
         try {
             const csrf = getCookie('csrftoken');
@@ -341,14 +370,16 @@
                 },
                 body: JSON.stringify({
                     attempt_id: STATE.attemptId,
-                    answers: STATE.answers
+                    answers: STATE.answers,
+                    disqualified: disqualified
                 })
             });
             const data = await response.json();
-            alert(`Exam Submitted! Score: ${data.score}%`);
-            window.location.href = "/exams/";
+            // Redirect to dedicated result page
+            window.location.href = `/exam/result/${STATE.attemptId}/`;
         } catch (e) {
             alert("Submission failed: " + e.message);
+            window.location.href = "/exams/"; // Fallback
         }
     }
 

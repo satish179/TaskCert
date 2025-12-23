@@ -14,7 +14,7 @@ from .views import (
     edit_exam_view, delete_exam_view, edit_question_view, activity_log_view,
     leaderboard_view, resource_library_view, upload_resource_view,
     leaderboard_view, resource_library_view, upload_resource_view,
-    forum_index_view, create_post_view, post_detail_view, take_exam_view
+    forum_index_view, create_post_view, post_detail_view, take_exam_view, exam_result_view
 )
 
 router = DefaultRouter()
@@ -56,6 +56,7 @@ urlpatterns = [
     path('submissions/', submissions_view, name='submissions'),
     path('exams/', exams_view, name='exams'),
     path('exam/<int:exam_id>/take/', take_exam_view, name='take_exam'),
+    path('exam/result/<int:attempt_id>/', exam_result_view, name='exam_result'),
     path('certificates/', certificates_view, name='certificates'),
     path('verify-certificate/', verify_certificate_view, name='verify_certificate'),
     path('sample-questions/', sample_questions_topics_view, name='sample_questions_topics'),

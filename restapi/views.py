@@ -880,6 +880,27 @@ def take_exam_view(request, exam_id):
     return render(request, 'exams/take_exam.html', context)
 
 @login_required(login_url='/login/')
+def exam_result_view(request, attempt_id):
+    from django.shortcuts import get_object_or_404
+    attempt = get_object_or_404(ExamAttempt, id=attempt_id, user=request.user)
+    
+    # Calculate stats
+    total_questions = attempt.exam.questions.count()
+    correct_answers = Result.objects.filter(user=request.user, exam=attempt.exam).first()
+    score = correct_answers.score if correct_answers else 0
+    passed = score >= attempt.exam.pass_score
+    
+    context = {
+        'attempt': attempt,
+        'exam': attempt.exam,
+        'score': score,
+        'passed': passed,
+        'total_questions': total_questions,
+        'status': 'Completed' if attempt.completed_at else 'Incomplete'
+    }
+    return render(request, 'exams/result.html', context)
+
+@login_required(login_url='/login/')
 def certificates_view(request):
     # Only show user's own certificates
     if request.user.is_staff:

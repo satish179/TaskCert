@@ -66,5 +66,63 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if recent_attempts %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="fw-bold mb-3"><i class="fas fa-history me-2"></i>Recent Results</h4>
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="py-3 ps-4">Exam</th>
+                                <th class="py-3">Date</th>
+                                <th class="py-3 text-center">Score</th>
+                                <th class="py-3 text-center">Status</th>
+                                <th class="py-3 text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in recent_attempts %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ attempt.exam.name }}</td>
+                                <td class="text-muted">{{ attempt.completed_at|date:"M d, Y H:i" }}</td>
+                                <td class="text-center">
+                                    {% with res=attempt.result_set.first %}
+                                    {% if res %}
+                                    <span
+                                        class="badge {% if res.score >= attempt.exam.pass_score %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
+                                        {{ res.score }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-center">
+                                    {% if attempt.disqualified %}
+                                    <span class="badge bg-dark">DISQUALIFIED</span>
+                                    {% elif attempt.completed_at %}
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> Completed</span>
+                                    {% else %}
+                                    <span class="text-warning"><i class="fas fa-exclamation-circle"></i>
+                                        Incomplete</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'exam_result' attempt.id %}" class="btn btn-sm btn-outline-primary">
+                                        View Result
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

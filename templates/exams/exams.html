@@ -401,7 +401,8 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="exam-card">
             <div class="exam-card-header">
-                <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h5>
+                <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{ exam.name
+                    }}</h5>
                 <p class="text-muted mb-0">{{ exam.created_by.name }}</p>
             </div>
             <div class="exam-card-body">
@@ -410,20 +411,24 @@
 
                 <div class="d-flex flex-column gap-2 mb-4">
                     <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-list text-primary center-icon" style="width:20px"></i> <span><strong>{{ exam.questions.count }}</strong> Questions</span>
+                        <i class="fas fa-list text-primary center-icon" style="width:20px"></i> <span><strong>{{
+                                exam.questions.count }}</strong> Questions</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 text-muted">
                         <i class="fas fa-hourglass-half text-primary center-icon" style="width:20px"></i>
                         <span><strong>{{ exam.duration_minutes }}</strong> Minutes</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i> <span>Pass Score: <strong>{{ exam.pass_score }}%</strong></span>
+                        <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i> <span>Pass
+                            Score: <strong>{{ exam.pass_score }}%</strong></span>
                     </div>
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap mb-4">
-                    <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High Value</span>
-                    <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{ attempt_counts|dict_get:exam.id|default:"0" }}</span>
+                    <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High
+                        Value</span>
+                    <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{
+                        attempt_counts|dict_get:exam.id|default:"0" }}</span>
                 </div>
 
                 <div class="mt-auto">
@@ -500,39 +505,46 @@
         <div class="modal-content">
             <!-- Loading State -->
             <div id="examLoading{{ exam.id }}"
-                class="text-center d-flex flex-column align-items-center justify-content-center h-100">
+                class="text-center d-flex flex-column align-items-center justify-content-center"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f8fafc; z-index: 1000;">
                 <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
                 <h4 class="mt-3 text-muted">Preparing Exam Environment...</h4>
             </div>
 
             <!-- Start Instructions State (Before actually clicking start inside modal) -->
             <div id="examIntro{{ exam.id }}"
-                class="exam-intro-screen h-100 d-flex flex-column align-items-center justify-content-center"
-                style="display:none;">
+                class="exam-intro-screen d-flex flex-column align-items-center justify-content-center"
+                style="display:none !important; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 999;">
                 <div class="mb-4"><i class="fas fa-pencil-alt fa-4x text-primary"></i></div>
                 <h1 class="fw-bold mb-3">{{ exam.name }}</h1>
                 <div class="card p-4 mb-4 text-start"
                     style="max-width: 600px; width: 100%; border: 1px solid #e2e8f0; background: #f8fafc;">
-                    <h5 class="fw-bold text-dark mb-3">Instructions:</h5>
+                    <h5 class="fw-bold text-dark mb-3">⚠️ Proctoring Notice:</h5>
+                    <ul class="text-danger mb-3" style="line-height: 1.8; font-weight: 600;">
+                        <li>⛔ DO NOT switch tabs or windows during the exam</li>
+                        <li>⛔ DO NOT minimize the browser</li>
+                        <li>⛔ DO NOT exit fullscreen mode</li>
+                        <li>⛔ Violations may result in automatic exam submission</li>
+                    </ul>
+                    <h5 class="fw-bold text-dark mb-3 mt-4">Instructions:</h5>
                     <ul class="text-muted mb-0" style="line-height: 1.8;">
                         <li>The exam duration is <strong>{{ exam.duration_minutes }} minutes</strong>.</li>
                         <li>Total Questions: <strong>{{ exam.questions.count }}</strong>.</li>
                         <li>Use the <strong>"Mark for Review"</strong> button if you are unsure about an answer.</li>
-                        <li>The timer at the top right counts down. Typically, the exam auto-submits when time reaches
-                            zero.</li>
-                        <li>Green indicates Answered, Red indicates Not Answered, Purple indicates Marked for Review.
-                        </li>
+                        <li>The timer at the top right counts down. The exam auto-submits when time reaches zero.</li>
+                        <li>Green = Answered, Red = Not Answered, Purple = Marked for Review</li>
                     </ul>
                 </div>
                 <div class="d-flex gap-3">
                     <button class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary px-5 py-2 fw-bold" onclick="beginExamSession({{ exam.id }})">I am
-                        Ready to Begin</button>
+                    <button class="btn btn-primary px-5 py-2 fw-bold" onclick="beginExamSession({{ exam.id }})">I
+                        Understand - Start Exam</button>
                 </div>
             </div>
 
             <!-- Actual Exam Interface (Hidden initially) -->
-            <div id="examInterface{{ exam.id }}" style="display:none; height: 100%; flex-direction: column;">
+            <div id="examInterface{{ exam.id }}"
+                style="display:none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; flex-direction: column; z-index: 998;">
 
                 <!-- 1. Header -->
                 <div class="exam-interface-header">
@@ -707,9 +719,7 @@
 
             console.log('API Response status:', resp.status);
             const data = await resp.json();
-            console.log('API Response data:', data);
-
-            if (!resp.ok) throw new Error(data.error || 'Failed to start');
+            console.log('API Response data:',         if (!resp.ok) throw new Error(data.error || 'Failed to start');
 
             // Validate response data
             if (!data.questions || data.questions.length === 0) {

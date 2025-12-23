@@ -1,51 +1,64 @@
 {% extends 'base.html' %}
 
-{% block title %}Resource Library - Task Certification Platform{% endblock %}
+{% block title %}Resource Library - TaskCert{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-book-reader"></i> Resource Library</h2>
-        {% if user.is_staff %}
-        <a href="{% url 'upload_resource' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Upload Resource
-        </a>
-        {% endif %}
+<div class="container py-5">
+    <div class="row mb-5 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold section-title mb-2"><i class="fas fa-book-reader me-2"></i>Resource Library</h2>
+            <p class="text-muted fs-5">Access study materials and references</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            {% if user.is_staff %}
+            <a href="{% url 'upload_resource' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="fas fa-plus me-2"></i> Upload Resource
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if resources %}
-    <div class="row mt-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for resource in resources %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm hover-shadow transition-all">
-                <div class="card-body">
-                    <div class="d-flex align-items-start mb-3">
-                        <div class="bg-light p-3 rounded me-3">
-                            <i class="fas fa-file-alt fa-2x text-primary"></i>
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-up transition-all">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="icon-square bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center"
+                            style="width: 48px; height: 48px;">
+                            {% if resource.link %}
+                            <i class="fas fa-link fa-lg"></i>
+                            {% else %}
+                            <i class="fas fa-file-alt fa-lg"></i>
+                            {% endif %}
                         </div>
-                        <div>
-                            <h5 class="card-title fw-bold mb-1">{{ resource.title }}</h5>
-                            <small class="text-muted">Uploaded by {{
-                                resource.uploaded_by.get_full_name|default:resource.uploaded_by.username }}</small>
-                        </div>
+                        <span class="badge bg-light text-secondary border">{{ resource.created_at|date:"M d, Y"
+                            }}</span>
                     </div>
-                    <p class="card-text text-secondary">{{ resource.description|default:"No description
+
+                    <h5 class="card-title fw-bold text-dark mb-2">{{ resource.title }}</h5>
+                    <p class="text-muted small mb-3">by {{
+                        resource.uploaded_by.get_full_name|default:resource.uploaded_by.username }}</p>
+
+                    <p class="card-text text-secondary mb-4 flex-grow-1">{{ resource.description|default:"No description
                         provided."|truncatewords:20 }}</p>
-                </div>
-                <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center pb-3">
-                    <small class="text-muted"><i class="far fa-clock"></i> {{ resource.created_at|date:"M d, Y"
-                        }}</small>
-                    {% if resource.link %}
-                    <a href="{{ resource.link }}" class="btn btn-outline-primary btn-sm" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Open Link
-                    </a>
-                    {% elif resource.file %}
-                    <a href="{{ resource.file.url }}" class="btn btn-outline-primary btn-sm" download>
-                        <i class="fas fa-download"></i> Download
-                    </a>
-                    {% else %}
-                    <span class="text-muted small">No content</span>
-                    {% endif %}
+
+                    <div class="mt-auto pt-3 border-top">
+                        {% if resource.link %}
+                        <a href="{{ resource.link }}" class="btn btn-outline-primary w-100 fw-bold" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i> Open Link
+                        </a>
+                        {% elif resource.file %}
+                        <a href="{{ resource.file.url }}" class="btn btn-outline-success w-100 fw-bold" download>
+                            <i class="fas fa-download me-2"></i> Download File
+                        </a>
+                        {% else %}
+                        <button class="btn btn-light text-muted w-100" disabled>
+                            <i class="fas fa-ban me-2"></i> No Content
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -57,15 +70,15 @@
             <i class="fas fa-folder-open"></i>
         </div>
         <h4>No Resources Found</h4>
-        <p class="text-muted">Check back later or ask your mentor to upload materials.</p>
+        <p class="text-muted">Check back later or ask your instructor to upload materials.</p>
     </div>
     {% endif %}
 </div>
 
 <style>
-    .hover-shadow:hover {
+    .hover-up:hover {
         transform: translateY(-5px);
-        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
     }
 
     .transition-all {

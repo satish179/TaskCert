@@ -23,15 +23,18 @@
                         <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
                             <i class="fas fa-graduation-cap me-1"></i> Exam
                         </div>
-                        <span class="text-muted small">{{ exam.created_at|date:"M Y" }}</span>
+                        <span class="text-muted small">
+                            {{ exam.created_at|date:"M Y" }}
+                        </span>
                     </div>
                     <h4 class="card-title fw-bold text-dark mb-1">{{ exam.name }}</h4>
                     <p class="text-muted small">{{ exam.created_by.name }}</p>
                 </div>
 
                 <div class="card-body px-4 pt-2 d-flex flex-column">
-                    <p class="text-muted mb-4 flex-grow-1">{{ exam.description|truncatewords:20|default:"Test your
-                        knowledge." }}</p>
+                    <p class="text-muted mb-4 flex-grow-1">
+                        {{ exam.description|truncatewords:20|default:"Test your knowledge." }}
+                    </p>
 
                     <div class="d-flex flex-column gap-3 mb-4">
                         <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
@@ -61,10 +64,13 @@
                         {% endif %}
                     </div>
                 </div>
+                <!-- Card Footer Attempts Logic -->
                 <div class="card-footer bg-white border-top-0 px-4 pb-4">
                     <small class="text-muted">
-                        <i class="fas fa-history me-1"></i> Your Attempts: <strong>{{
-                            attempt_counts|dict_get:exam.id|default:"0" }}</strong>
+                        <i class="fas fa-history me-1"></i> Your Attempts:
+                        <strong>
+                            {{ attempt_counts|dict_get:exam.id|default:"0" }}
+                        </strong>
                     </small>
                 </div>
             </div>
@@ -101,18 +107,22 @@
                             {% for attempt in recent_attempts %}
                             <tr>
                                 <td class="ps-4 fw-bold text-dark">{{ attempt.exam.name }}</td>
-                                <td class="text-muted small">{{ attempt.submitted_at|date:"M d, Y • H:i" }}</td>
+                                <td class="text-muted small">
+                                    {{ attempt.submitted_at|date:"M d, Y • H:i" }}
+                                </td>
                                 <td class="text-center">
                                     {% with res=attempt.result_set.first %}
                                     {% if res %}
                                     {% if res.score >= attempt.exam.pass_score %}
                                     <span
-                                        class="badge bg-success bg-opacity-10 text-success border border-success px-3 rounded-pill">{{
-                                        res.score }}%</span>
+                                        class="badge bg-success bg-opacity-10 text-success border border-success px-3 rounded-pill">
+                                        {{ res.score }}%
+                                    </span>
                                     {% else %}
                                     <span
-                                        class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 rounded-pill">{{
-                                        res.score }}%</span>
+                                        class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 rounded-pill">
+                                        {{ res.score }}%
+                                    </span>
                                     {% endif %}
                                     {% else %}
                                     <span class="text-muted">-</span>

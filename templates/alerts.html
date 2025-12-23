@@ -1,15 +1,7 @@
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    {% endfor %}
-{% endif %}
-
 {% if overdue_tasks %}
-    <div class="alert alert-warning" role="alert">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>Overdue Tasks!</strong> You have {{ overdue_tasks|length }} overdue task(s). Please complete them as soon as possible.
-    </div>
+<div class="alert alert-warning" role="alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Overdue Tasks!</strong> You have {{ overdue_tasks|length }} overdue task(s). Please complete them as soon as
+    possible.
+</div>
 {% endif %}

@@ -401,7 +401,8 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="exam-card">
             <div class="exam-card-header">
-                <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h5>
+                <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{ exam.name
+                    }}</h5>
                 <p class="text-muted mb-0">{{ exam.created_by.name }}</p>
             </div>
             <div class="exam-card-body">
@@ -410,20 +411,24 @@
 
                 <div class="d-flex flex-column gap-2 mb-4">
                     <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-list text-primary center-icon" style="width:20px"></i> <span><strong>{{ exam.questions.count }}</strong> Questions</span>
+                        <i class="fas fa-list text-primary center-icon" style="width:20px"></i> <span><strong>{{
+                                exam.questions.count }}</strong> Questions</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 text-muted">
                         <i class="fas fa-hourglass-half text-primary center-icon" style="width:20px"></i>
                         <span><strong>{{ exam.duration_minutes }}</strong> Minutes</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i> <span>Pass Score: <strong>{{ exam.pass_score }}%</strong></span>
+                        <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i> <span>Pass
+                            Score: <strong>{{ exam.pass_score }}%</strong></span>
                     </div>
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap mb-4">
-                    <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High Value</span>
-                    <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{ attempt_counts|dict_get:exam.id|default:"0" }}</span>
+                    <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High
+                        Value</span>
+                    <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{
+                        attempt_counts|dict_get:exam.id|default:"0" }}</span>
                 </div>
 
                 <div class="mt-auto">
@@ -687,6 +692,7 @@
 
     // Called when clicking "I am Ready to Begin"
     async function beginExamSession(examId) {
+        console.log('Starting exam session for exam ID:', examId);
         const intro = document.getElementById(`examIntro${examId}`);
         const loading = document.getElementById(`examLoading${examId}`);
 
@@ -697,14 +703,23 @@
         try {
             // Fetch/Start
             const csrf = getCookie('csrftoken');
+            console.log('Calling start_exam API...');
             const resp = await fetch('/api/results/start_exam/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
                 body: JSON.stringify({ exam_id: examId })
             });
 
+            console.log('API Response status:', resp.status);
             const data = await resp.json();
+            console.log('API Response data:', data);
+
             if (!resp.ok) throw new Error(data.error || 'Failed to start');
+
+            // Validate response data
+            if (!data.questions || data.questions.length === 0) {
+                throw new Error('No questions received from server');
+            }
 
             // Init State
             const state = examState[examId];
@@ -716,23 +731,30 @@
             state.durationSec = diffSec > 0 ? diffSec : (data.duration_minutes || 30) * 60;
             state.questions = data.questions || [];
 
+            console.log(`Loaded ${state.questions.length} questions, duration: ${state.durationSec}s`);
+
             // Render basic UI
             renderPalette(examId);
             loadQuestion(examId, 0);
             startTimer(examId);
 
-            // Switch View
+            console.log('Switching to exam interface...');
+            // Switch View - IMPORTANT: Hide loading first, then show interface
             loading.style.display = 'none';
-            document.getElementById(`examInterface${examId}`).style.display = 'flex';
+            const examInterface = document.getElementById(`examInterface${examId}`);
+            examInterface.style.display = 'flex';
+            console.log('Exam interface displayed');
 
-            // Sidebar toggle for mobile
-            // close by default
+            // Sidebar toggle for mobile - close by default
             const sidebar = document.getElementById(`paletteSidebar${examId}`);
-            sidebar.classList.remove('open');
+            if (sidebar) sidebar.classList.remove('open');
 
+            // Enter fullscreen proctoring mode
+            console.log('Entering proctor mode...');
             enterProctorMode(examId);
 
         } catch (e) {
+            console.error('Error starting exam:', e);
             alert("Error: " + e.message);
             loading.innerHTML = `<div class="text-danger h5">${e.message}</div><button class="btn btn-secondary mt-3" data-bs-dismiss="modal">Close</button>`;
         }

@@ -867,6 +867,19 @@ def exams_view(request):
     return render(request, 'exams/exams.html', context)
 
 @login_required(login_url='/login/')
+def take_exam_view(request, exam_id):
+    from django.shortcuts import get_object_or_404
+    exam = get_object_or_404(Exam, id=exam_id)
+    
+    # Check if authorized (future exp: logic for paid exams or assigned only)
+    # For now, public access to all exams
+    
+    context = {
+        'exam': exam,
+    }
+    return render(request, 'exams/take_exam.html', context)
+
+@login_required(login_url='/login/')
 def certificates_view(request):
     # Only show user's own certificates
     if request.user.is_staff:

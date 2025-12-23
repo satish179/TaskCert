@@ -1802,9 +1802,14 @@ def upload_resource_view(request):
         title = request.POST.get('title')
         description = request.POST.get('description')
         file = request.FILES.get('file')
+        link = request.POST.get('link')
 
-        if not title or not file:
-            messages.error(request, 'Title and File are required.')
+        if not title:
+            messages.error(request, 'Title is required.')
+            return redirect('upload_resource')
+            
+        if not file and not link:
+            messages.error(request, 'Please provide either a File or an External Link.')
             return redirect('upload_resource')
 
         try:
@@ -1812,6 +1817,7 @@ def upload_resource_view(request):
                 title=title,
                 description=description,
                 file=file,
+                link=link,
                 uploaded_by=request.user
             )
             messages.success(request, 'Resource uploaded successfully!')

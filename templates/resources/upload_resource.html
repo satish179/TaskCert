@@ -25,12 +25,23 @@
                                 placeholder="Brief description of the resource content..."></textarea>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="file" class="form-label">Resource File</label>
-                            <input type="file" class="form-control" id="file" name="file" required
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold text-primary"><i class="fas fa-link"></i> External Resource
+                                Link (Recommended)</label>
+                            <input type="url" class="form-control" id="link" name="link"
+                                placeholder="e.g. Google Drive, YouTube, Docs link...">
+                            <small class="text-muted">Best for Vercel/Cloud deployment. Paste any shareable link
+                                here.</small>
+                        </div>
+
+                        <div class="text-center my-2 text-muted fw-bold">- OR -</div>
+
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label for="file" class="form-label fw-bold"><i class="fas fa-file-upload"></i> Upload
+                                File</label>
+                            <input type="file" class="form-control" id="file" name="file"
                                 accept=".pdf,.docx,.doc,.txt,.zip,.png,.jpg,.jpeg,.mp4">
-                            <small class="text-muted">Supported formats: PDF, DOCX, ZIP, MP4, etc. (Max size:
-                                4MB)</small>
+                            <small class="text-muted">Supported formats: PDF, DOCX, ZIP, MP4. (Max size: 4MB)</small>
                             <div id="fileError" class="text-danger mt-1" style="display: none;">
                                 <i class="fas fa-exclamation-circle"></i> File is too large. Maximum allowed size is
                                 4MB.
@@ -38,27 +49,41 @@
                         </div>
 
                         <script>
-                            document.getElementById('file').addEventListener('change', function () {
-                                const file = this.files[0];
-                                const maxSize = 4 * 1024 * 1024; // 4MB
-                                const errorDiv = document.getElementById('fileError');
-                                const submitBtn = document.querySelector('button[type="submit"]');
+                            const fileInput = document.getElementById('file');
+                            const linkInput = document.getElementById('link');
+                            const submitBtn = document.querySelector('button[type="submit"]');
+                            const errorDiv = document.getElementById('fileError');
+                            const maxSize = 4 * 1024 * 1024; // 4MB
 
-                                if (file && file.size > maxSize) {
-                                    errorDiv.style.display = 'block';
-                                    this.value = ''; // Clear input
-                                    submitBtn.disabled = true;
-                                } else {
-                                    errorDiv.style.display = 'none';
-                                    submitBtn.disabled = false;
+                            function validate() {
+                                let valid = true;
+
+                                if (fileInput.files.length > 0) {
+                                    if (fileInput.files[0].size > maxSize) {
+                                        errorDiv.style.display = 'block';
+                                        valid = false;
+                                    } else {
+                                        errorDiv.style.display = 'none';
+                                    }
                                 }
-                            });
+
+                                // Simplified check: Ensure at least one is present? 
+                                // Actually, we'll let valid=true if no file error, but disable if both empty?
+                                // Backend requires one, let's keep button valid unless file size error.
+                                // Actually, standard required attribute doesn't work well with OR logic on UI without complex JS.
+                                // We'll rely on backend validation for "empty" (which redirs with error message now).
+
+                                submitBtn.disabled = !valid;
+                            }
+
+                            fileInput.addEventListener('change', validate);
+                            linkInput.addEventListener('input', validate);
                         </script>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'resource_library' %}" class="btn btn-secondary"><i
                                     class="fas fa-arrow-left"></i> Cancel</a>
-                            <button type="submit" class="btn btn-success"><i class="fas fa-upload"></i> Upload
+                            <button type="submit" class="btn btn-success"><i class="fas fa-upload"></i> Save
                                 Resource</button>
                         </div>
                     </form>

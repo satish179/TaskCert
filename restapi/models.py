@@ -68,7 +68,8 @@ class Task(models.Model):
 class Resource(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    file = models.FileField(upload_to='resources/')
+    file = models.FileField(upload_to='resources/', null=True, blank=True)
+    link = models.URLField(max_length=500, null=True, blank=True, help_text="External link (Google Drive, YouTube, etc.)")
     uploaded_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='uploaded_resources')
     created_at = models.DateTimeField(auto_now_add=True)
 

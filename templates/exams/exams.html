@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <!-- Exam Modal -->
+        <!-- Exam Modal (Intro & Loading Only) -->
         <div class="modal fade" id="examModal{{ exam.id }}" data-bs-backdrop="static" data-bs-keyboard="false"
             tabindex="-1">
             <div class="modal-dialog modal-fullscreen">
@@ -107,73 +107,72 @@
                         </div>
                     </div>
 
-                    <!-- Exam Interface -->
-                    <div id="examInterface{{ exam.id }}" class="exam-screen"
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1060; background: #f8f9fa; display: none; flex-direction: column;">
-                        <!-- Top Bar -->
-                        <div
-                            class="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center shadow-sm">
-                            <h5 class="m-0 fw-bold">{{ exam.name }}</h5>
-                            <div class="d-flex align-items-center gap-3">
-                                <div id="timer{{ exam.id }}" class="fs-4 fw-bold font-monospace">00:00</div>
-                                <button class="btn btn-danger btn-sm submit-exam-btn" data-exam-id="{{ exam.id }}">
-                                    Submit Exam
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Main Content -->
-                        <div class="flex-grow-1 overflow-hidden" style="display: flex;">
-                            <!-- Question Area -->
-                            <div class="flex-grow-1 p-4 overflow-auto bg-white">
-                                <div id="questionArea{{ exam.id }}" style="max-width: 900px; margin: 0 auto;">
-                                    <!-- Questions rendered by JS -->
-                                </div>
-
-                                <!-- Navigation Buttons -->
-                                <div class="d-flex justify-content-between mt-5 pt-3 border-top"
-                                    style="max-width: 900px; margin: 0 auto;">
-                                    <button class="btn btn-outline-primary px-4 prev-btn" data-exam-id="{{ exam.id }}">
-                                        <i class="fas fa-chevron-left"></i> Previous
-                                    </button>
-                                    <div>
-                                        <button class="btn btn-outline-danger me-2 clear-btn"
-                                            data-exam-id="{{ exam.id }}">
-                                            Clear Answer
-                                        </button>
-                                        <button class="btn btn-outline-warning review-btn" data-exam-id="{{ exam.id }}">
-                                            <i class="far fa-flag"></i> Mark for Review
-                                        </button>
-                                    </div>
-                                    <button class="btn btn-primary px-4 next-btn" data-exam-id="{{ exam.id }}">
-                                        Next <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Question Palette -->
-                            <div class="border-start p-3 bg-light" style="width: 280px; overflow-auto;">
-                                <h6 class="fw-bold mb-3">Question Palette</h6>
-                                <div id="palette{{ exam.id }}" class="d-flex flex-wrap gap-2">
-                                    <!-- Palette buttons rendered by JS -->
-                                </div>
-                                <div class="mt-4 small text-muted">
-                                    <div class="mb-2"><span class="badge bg-success"
-                                            style="width:12px;height:12px;"></span> Answered</div>
-                                    <div class="mb-2"><span class="badge bg-warning"
-                                            style="width:12px;height:12px;"></span> Marked</div>
-                                    <div class="mb-2"><span class="badge bg-outline-danger"
-                                            style="width:12px;height:12px;"></span> Not Answered</div>
-                                    <div class="mb-2"><span class="badge bg-light border"
-                                            style="width:12px;height:12px;"></span> Not Visited</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
+
+        <!-- GLOBAL EXAM INTERFACE (Outside Modal to prevent backdrop issues) -->
+        <div id="examInterface{{ exam.id }}" class="exam-screen"
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: #f8f9fa; display: none; flex-direction: column;">
+            <!-- Top Bar -->
+            <div class="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center shadow-sm">
+                <h5 class="m-0 fw-bold">{{ exam.name }}</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <div id="timer{{ exam.id }}" class="fs-4 fw-bold font-monospace">00:00</div>
+                    <button class="btn btn-danger btn-sm submit-exam-btn" data-exam-id="{{ exam.id }}">
+                        Submit Exam
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-grow-1 overflow-hidden" style="display: flex;">
+                <!-- Question Area -->
+                <div class="flex-grow-1 p-4 overflow-auto bg-white">
+                    <div id="questionArea{{ exam.id }}" style="max-width: 900px; margin: 0 auto;">
+                        <!-- Questions rendered by JS -->
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between mt-5 pt-3 border-top"
+                        style="max-width: 900px; margin: 0 auto;">
+                        <button class="btn btn-outline-primary px-4 prev-btn" data-exam-id="{{ exam.id }}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <div>
+                            <button class="btn btn-outline-danger me-2 clear-btn" data-exam-id="{{ exam.id }}">
+                                Clear Answer
+                            </button>
+                            <button class="btn btn-outline-warning review-btn" data-exam-id="{{ exam.id }}">
+                                <i class="far fa-flag"></i> Mark for Review
+                            </button>
+                        </div>
+                        <button class="btn btn-primary px-4 next-btn" data-exam-id="{{ exam.id }}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question Palette -->
+                <div class="border-start p-3 bg-light" style="width: 280px; overflow-auto;">
+                    <h6 class="fw-bold mb-3">Question Palette</h6>
+                    <div id="palette{{ exam.id }}" class="d-flex flex-wrap gap-2">
+                        <!-- Palette buttons rendered by JS -->
+                    </div>
+                    <div class="mt-4 small text-muted">
+                        <div class="mb-2"><span class="badge bg-success" style="width:12px;height:12px;"></span>
+                            Answered</div>
+                        <div class="mb-2"><span class="badge bg-warning" style="width:12px;height:12px;"></span> Marked
+                        </div>
+                        <div class="mb-2"><span class="badge bg-outline-danger" style="width:12px;height:12px;"></span>
+                            Not Answered</div>
+                        <div class="mb-2"><span class="badge bg-light border" style="width:12px;height:12px;"></span>
+                            Not Visited</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {% endfor %}
     </div>
 </div>
@@ -242,8 +241,13 @@
                     document.documentElement.requestFullscreen().catch(() => { });
                 }
 
-                // Show exam interface
-                document.getElementById(`examLoading${examId}`).style.display = 'none';
+                // --- CRITICAL FIX: Hide Modal, Show Global Interface ---
+                // We hide the modal instance to remove backdrop
+                const modalEl = document.getElementById(`examModal${examId}`);
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+
+                // Show global interface
                 document.getElementById(`examInterface${examId}`).style.display = 'flex';
 
             } catch (error) {
@@ -412,8 +416,11 @@
             const mins = Math.floor(state.timerSeconds / 60);
             const secs = state.timerSeconds % 60;
             const timerEl = document.getElementById(`timer${examId}`);
-            timerEl.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            if (state.timerSeconds < 300) timerEl.classList.add('text-danger');
+            // Check if element exists before updating (in case user navigated away)
+            if (timerEl) {
+                timerEl.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                if (state.timerSeconds < 300) timerEl.classList.add('text-danger');
+            }
             if (state.timerSeconds <= 0) submitExam(examId);
         }, 1000);
     }

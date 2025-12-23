@@ -120,344 +120,436 @@
 
 {% block extra_js %}
 <script>
-    const EXAM_ID = "{{ exam.id }}";
+    // ==========================================
+    // Core Configuration & State
+    // ==========================================
+    const CONFIG = {
+        EXAM_ID: "{{ exam.id }}",
+        WARNING_LIMIT: 3,
+        POLL_INTERVAL_MS: 1000,
+        API: {
+            START: '/api/results/start_exam/',
+            SUBMIT: '/api/results/submit_exam/'
+        }
+    };
+
     const STATE = {
         attemptId: null,
         questions: [],
         currentIndex: 0,
         answers: {},
         marked: new Set(),
-        visited: new Set(),
         timerSeconds: 0,
-        timerInterval: null
+        timerInterval: null,
+        isExamActive: false
     };
 
-    // On Load: Manage Intro Overlay
-    document.addEventListener('DOMContentLoaded', () => {
-        const introOverlay = document.getElementById('introOverlay');
-
-        document.getElementById('startBtn').addEventListener('click', () => {
-            introOverlay.style.display = 'none'; // Hide overlay
-            startExam();
-        });
-    });
-
-    async function startExam() {
-        try {
-            // Request Fullscreen
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => { });
-            }
-
-            const csrf = getCookie('csrftoken');
-            const response = await fetch('/api/results/start_exam/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf
-                },
-                body: JSON.stringify({ exam_id: EXAM_ID })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to start');
-
-            STATE.attemptId = data.attempt_id;
-            STATE.questions = data.questions || [];
-            STATE.timerSeconds = data.duration_seconds || 0;
-
-            renderPalette();
-            loadQuestion(0);
-            startTimer();
-
-        } catch (error) {
-            alert("Error starting exam: " + error.message);
-            window.location.href = "/exams/";
+    // ==========================================
+    // Proctoring Manager (The "Enforcer")
+    // ==========================================
+    class ProctoringManager {
+        constructor() {
+            this.warnings = 0;
+            this.overlay = this.createOverlay();
+            this.isViolationActive = false;
         }
-    }
 
-    function loadQuestion(index) {
-        if (index < 0 || index >= STATE.questions.length) return;
-
-        STATE.currentIndex = index;
-        STATE.visited.add(index);
-
-        const q = STATE.questions[index];
-        const savedAnswer = STATE.answers[q.id] || '';
-
-        let html = `
-        <div class="mb-4">
-            <span class="badge bg-secondary mb-2">Question ${index + 1} of ${STATE.questions.length}</span>
-            <h5 class="fw-bold">${escapeHtml(q.question_text)}</h5>
-        </div>
-    `;
-
-        if (q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
-            html += '<div class="d-flex flex-column gap-2">';
-            (q.options || []).forEach(opt => {
-                const checked = savedAnswer === opt ? 'checked' : '';
-                html += `
-                <label class="p-3 border rounded d-flex align-items-center gap-2" style="cursor: pointer;">
-                    <input type="radio" name="q${q.id}" value="${escapeHtml(opt)}" ${checked} 
-                        class="form-check-input" data-qid="${q.id}">
-                    <span>${escapeHtml(opt)}</span>
-                </label>
+        createOverlay() {
+            const div = document.createElement('div');
+            div.id = 'proctorOverlay';
+            div.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(220, 53, 69, 0.98); z-index: 2147483647;
+                display: none; flex-direction: column; justify-content: center; align-items: center;
+                color: white; text-align: center; font-family: system-ui, -apple-system, sans-serif;
             `;
-            });
-            html += '</div>';
-        } else {
-            html += `
-            <textarea class="form-control" rows="5" placeholder="Type your answer..." 
-                data-qid="${q.id}">${escapeHtml(savedAnswer)}</textarea>
-        `;
-        }
-
-        document.getElementById(`questionArea`).innerHTML = html;
-
-        // Attach event listeners
-        document.querySelectorAll(`#questionArea input, #questionArea textarea`).forEach(input => {
-            input.addEventListener('change', function () {
-                const qId = this.dataset.qid;
-                STATE.answers[qId] = this.value;
-                updatePalette();
-            });
-        });
-
-        updatePalette();
-        updateButtons();
-    }
-
-    function renderPalette() {
-        const palette = document.getElementById(`palette`);
-        palette.innerHTML = '';
-
-        STATE.questions.forEach((q, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-sm';
-            btn.textContent = idx + 1;
-            btn.style.width = '40px';
-            btn.style.height = '40px';
-            btn.id = `paletteBtn_${idx}`;
-            btn.onclick = () => loadQuestion(idx);
-            palette.appendChild(btn);
-        });
-        updatePalette();
-    }
-
-    function updatePalette() {
-        STATE.questions.forEach((q, idx) => {
-            const btn = document.getElementById(`paletteBtn_${idx}`);
-            if (!btn) return;
-
-            btn.className = 'btn btn-sm';
-
-            if (idx === STATE.currentIndex) {
-                btn.style.border = '2px solid var(--primary)';
-            } else {
-                btn.style.border = '1px solid #dee2e6';
-            }
-
-            if (STATE.marked.has(idx)) {
-                btn.className += ' btn-warning text-white';
-            } else if (STATE.answers[q.id]) {
-                btn.className += ' btn-success text-white';
-            } else if (STATE.visited.has(idx)) {
-                btn.className += ' btn-outline-danger';
-            } else {
-                btn.className += ' btn-light';
-            }
-        });
-    }
-
-    function updateButtons() {
-        document.querySelector(`.prev-btn`).disabled = STATE.currentIndex === 0;
-
-        const nextBtn = document.querySelector(`.next-btn`);
-        if (STATE.currentIndex === STATE.questions.length - 1) {
-            nextBtn.innerHTML = 'Submit Exam <i class="fas fa-check-circle"></i>';
-            nextBtn.classList.remove('btn-primary');
-            nextBtn.classList.add('btn-success');
-            nextBtn.onclick = () => { if (confirm(`Submit Exam?`)) submitExam(); };
-        } else {
-            nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
-            nextBtn.classList.remove('btn-success');
-            nextBtn.classList.add('btn-primary');
-            nextBtn.disabled = false;
-            nextBtn.onclick = () => loadQuestion(STATE.currentIndex + 1);
-        }
-
-        const reviewBtn = document.querySelector(`.review-btn`);
-        if (STATE.marked.has(STATE.currentIndex)) {
-            reviewBtn.innerHTML = '<i class="fas fa-flag"></i> Unmark';
-            reviewBtn.classList.remove('btn-outline-warning');
-            reviewBtn.classList.add('btn-warning');
-        } else {
-            reviewBtn.innerHTML = '<i class="far fa-flag"></i> Mark for Review';
-            reviewBtn.classList.remove('btn-warning');
-            reviewBtn.classList.add('btn-outline-warning');
-        }
-    }
-
-    // Global Nav Listeners
-    document.querySelector('.prev-btn').onclick = () => loadQuestion(STATE.currentIndex - 1);
-    // Next btn listener is handled dynamically in updateButtons
-    document.querySelector('.review-btn').onclick = () => {
-        if (STATE.marked.has(STATE.currentIndex)) STATE.marked.delete(STATE.currentIndex);
-        else STATE.marked.add(STATE.currentIndex);
-        updatePalette();
-        updateButtons();
-    };
-    document.querySelector('.clear-btn').onclick = () => {
-        delete STATE.answers[STATE.questions[STATE.currentIndex].id];
-        loadQuestion(STATE.currentIndex);
-    };
-    document.querySelector('.submit-exam-btn').onclick = () => {
-        if (confirm(`Submit Exam?`)) submitExam();
-    };
-
-    function startTimer() {
-        STATE.timerInterval = setInterval(() => {
-            STATE.timerSeconds--;
-            const mins = Math.floor(STATE.timerSeconds / 60);
-            const secs = STATE.timerSeconds % 60;
-            const timerEl = document.getElementById(`timer`);
-            timerEl.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            if (STATE.timerSeconds <= 0) submitExam();
-        }, 1000);
-    }
-
-    // Proctoring Logic - Aggressive Mode
-    const WARNING_LIMIT = 3;
-    let warnings = 0;
-
-    // Create Warning Overlay dynamically if not exists
-    const warningOverlay = document.createElement('div');
-    warningOverlay.id = 'warningOverlay';
-    warningOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(220,53,69,0.95);z-index:200000;display:none;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;';
-    warningOverlay.innerHTML = `
-        <i class="fas fa-exclamation-triangle fa-5x mb-4"></i>
-        <h1 class="fw-bold">VIOLATION DETECTED</h1>
-        <h3 id="warningReason" class="mb-4"></h3>
-        <div id="warningCount" class="display-1 fw-bold mb-4"></div>
-        <p class="fs-4">Return to Fullscreen immediately to continue.</p>
-        <button id="resumeBtn" class="btn btn-light btn-lg px-5 fw-bold text-danger mt-4">I Understand - Resume Exam</button>
-    `;
-    document.body.appendChild(warningOverlay);
-
-    document.getElementById('resumeBtn').onclick = () => {
-        warningOverlay.style.display = 'none';
-        try {
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => { });
-        } catch (e) { }
-    };
-
-    function triggerWarning(reason) {
-        // Ignore if already showing warning or if exam hasn't started (overlay active)
-        if (warningOverlay.style.display === 'flex') return;
-        if (document.getElementById('introOverlay').style.display !== 'none') return;
-
-        warnings++;
-
-        if (warnings >= WARNING_LIMIT) {
-            warningOverlay.innerHTML = `
-                <i class="fas fa-ban fa-5x mb-4"></i>
-                <h1 class="fw-bold">EXAM TERMINATED</h1>
-                <h3 class="mb-4">Multiple Violations Detected</h3>
-                <p class="fs-4">You have exceeded the warning limit.</p>
-                <div class="spinner-border text-light mt-4"></div>
+            div.innerHTML = `
+                <i class="fas fa-exclamation-triangle fa-5x mb-4"></i>
+                <h1 class="fw-bold display-4">VIOLATION DETECTED</h1>
+                <h3 id="proctorReason" class="mb-4 text-uppercase tracking-wider">Reason</h3>
+                <div id="proctorCount" class="display-1 fw-bold mb-4 bg-white text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">0/3</div>
+                <p class="fs-4 px-3" style="max-width: 600px;">
+                    You have violated the exam rules. Return to Fullscreen immediately.
+                </p>
+                <button id="resumeExamBtn" class="btn btn-light btn-lg px-5 fw-bold text-danger mt-4 shadow-lg rounded-pill">
+                    <i class="fas fa-undo me-2"></i> I Understand - Resume
+                </button>
             `;
-            warningOverlay.style.display = 'flex';
-            setTimeout(() => submitExam(true), 1500); // Disqualified
-        } else {
-            document.getElementById('warningReason').textContent = reason;
-            document.getElementById('warningCount').textContent = `${warnings}/${WARNING_LIMIT}`;
-            warningOverlay.style.display = 'flex';
+            document.body.appendChild(div);
+
+            div.querySelector('#resumeExamBtn').onclick = () => this.attemptResume();
+            return div;
         }
 
-        // Log to backend (optional, skipped for now to save bandwidth)
-        console.warn(`Proctoring Warning: ${reason} (${warnings}/${WARNING_LIMIT})`);
-    }
+        start() {
+            // Bind listeners
+            document.addEventListener('visibilitychange', () => this.checkVisibility());
+            window.addEventListener('blur', () => this.checkFocus());
 
-    // Event Listeners for Tab Switching / Visibility
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) triggerWarning("Tab Switch / Window Minimized");
-    });
-    window.addEventListener('blur', () => {
-        // triggerWarning("Focus Lost (Alt+Tab)"); // Too aggressive? Maybe, but requested.
-        // Only trigger if actually hidden or fullscreen lost to avoid false positives on some systems
-        if (document.hidden) triggerWarning("Focus Lost");
-    });
+            // Vendor-prefixed fullscreen listeners
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(
+                event => document.addEventListener(event, () => this.checkFullscreen())
+            );
 
-    // Event Listeners for Fullscreen - Vendor Prefixed
-    function checkFullscreen() {
-        // If exam started
-        if (document.getElementById('introOverlay').style.display === 'none') {
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-            if (!isFullscreen) {
-                triggerWarning("Exited Fullscreen Mode");
+            // Aggressive Polling
+            setInterval(() => this.pollStatus(), CONFIG.POLL_INTERVAL_MS);
+
+            console.log("🛡️ Proctoring Started");
+        }
+
+        pollStatus() {
+            if (!STATE.isExamActive || this.isViolationActive) return;
+
+            if (document.hidden) this.triggerViolation("Tab Switched / Minimized");
+            else if (!this.isFullscreen()) this.triggerViolation("Exited Fullscreen");
+        }
+
+        checkVisibility() {
+            if (STATE.isExamActive && document.hidden) this.triggerViolation("Tab Switched");
+        }
+
+        checkFocus() {
+            // Optional: Can be too sensitive, relying on visibility is usually safer for UX
+            if (STATE.isExamActive && document.hidden) this.triggerViolation("Focus Lost");
+        }
+
+        checkFullscreen() {
+            if (STATE.isExamActive && !this.isFullscreen()) this.triggerViolation("Exited Fullscreen Mode");
+        }
+
+        isFullscreen() {
+            return document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement;
+        }
+
+        triggerViolation(reason) {
+            if (this.isViolationActive) return; // Already showing
+            this.isViolationActive = true;
+            this.warnings++;
+
+            console.warn(`Violation: ${reason} (${this.warnings}/${CONFIG.WARNING_LIMIT})`);
+
+            // Update UI
+            document.getElementById('proctorReason').textContent = reason;
+            document.getElementById('proctorCount').textContent = `${this.warnings}/${CONFIG.WARNING_LIMIT}`;
+
+            if (this.warnings >= CONFIG.WARNING_LIMIT) {
+                this.terminateExam();
+            } else {
+                this.overlay.style.display = 'flex';
             }
         }
-    }
 
-    document.addEventListener('fullscreenchange', checkFullscreen);
-    document.addEventListener('webkitfullscreenchange', checkFullscreen);
-    document.addEventListener('mozfullscreenchange', checkFullscreen);
-    document.addEventListener('MSFullscreenChange', checkFullscreen);
+        attemptResume() {
+            // Force Fullscreen
+            try {
+                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+                else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
+            } catch (e) { console.error(e); }
 
-    // Aggressive Polling (Backup for missing events)
-    setInterval(() => {
-        if (document.getElementById('introOverlay').style.display === 'none') {
-            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-            if (!isFullscreen) triggerWarning("Fullscreen Required (Check)");
-            if (document.hidden) triggerWarning("Tab Inactive (Check)");
-        }
-    }, 2000);
-
-    // ... (Existing timer/logic) ...
-
-    async function submitExam(disqualified = false) {
-        clearInterval(STATE.timerInterval);
-        try {
-            const csrf = getCookie('csrftoken');
-            const response = await fetch('/api/results/submit_exam/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf
-                },
-                body: JSON.stringify({
-                    attempt_id: STATE.attemptId,
-                    answers: STATE.answers,
-                    disqualified: disqualified
-                })
-            });
-            const data = await response.json();
-            // Redirect to dedicated result page
-            window.location.href = `/exam/result/${STATE.attemptId}/`;
-        } catch (e) {
-            alert("Submission failed: " + e.message);
-            window.location.href = "/exams/"; // Fallback
-        }
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+            // Small delay to allow fullscreen transition before checking
+            setTimeout(() => {
+                if (this.isFullscreen()) {
+                    this.overlay.style.display = 'none';
+                    this.isViolationActive = false;
+                } else {
+                    alert("You must allow Fullscreen to continue.");
                 }
-            }
+            }, 300);
         }
-        return cookieValue;
+
+        terminateExam() {
+            this.overlay.innerHTML = `
+                <i class="fas fa-ban fa-5x mb-4"></i>
+                <h1 class="fw-bold text-uppercase">Exam Terminated</h1>
+                <h3 class="mb-3">Security Violation Limit Reached</h3>
+                <div class="spinner-border text-light my-4" style="width: 3rem; height: 3rem;"></div>
+                <p>Auto-submitting your answers...</p>
+            `;
+            this.overlay.style.display = 'flex';
+            setTimeout(() => ExamEngine.submit(true), 1500);
+        }
     }
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+
+    const Proctor = new ProctoringManager();
+
+    // ==========================================
+    // Exam Engine (Logic & UI)
+    // ==========================================
+    const ExamEngine = {
+        async init() {
+            const introOverlay = document.getElementById('introOverlay');
+            document.getElementById('startBtn').addEventListener('click', async () => {
+                try {
+                    await this.requestFullscreen();
+                } catch (e) { }
+
+                introOverlay.style.display = 'none';
+                STATE.isExamActive = true;
+                Proctor.start();
+                this.startSession();
+            });
+        },
+
+        async requestFullscreen() {
+            if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+            else if (document.documentElement.webkitRequestFullscreen) await document.documentElement.webkitRequestFullscreen();
+        },
+
+        async startSession() {
+            try {
+                const csrf = this.getCookie('csrftoken');
+                const res = await fetch(CONFIG.API.START, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                    body: JSON.stringify({ exam_id: CONFIG.EXAM_ID })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Init failed');
+
+                STATE.attemptId = data.attempt_id;
+                STATE.questions = data.questions || [];
+                STATE.timerSeconds = data.duration_seconds || 0;
+
+                this.renderPalette();
+                this.loadQuestion(0);
+                this.startTimer();
+
+            } catch (e) {
+                alert("Critical Error: " + e.message);
+                window.location.href = '/exams/';
+            }
+        },
+
+        loadQuestion(index) {
+            if (index < 0 || index >= STATE.questions.length) return;
+
+            STATE.currentIndex = index;
+            // STATE.visited.add(index); // Optional: tracked by next/prev actions usually
+
+            const q = STATE.questions[index];
+            const savedVal = STATE.answers[q.id] || '';
+            const area = document.getElementById('questionArea');
+
+            // Render Header
+            let html = `
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">Question ${index + 1} of ${STATE.questions.length}</span>
+                        <span class="text-muted small">ID: #${q.id}</span>
+                    </div>
+                    <h5 class="fw-bold" style="line-height: 1.6;">${this.escape(q.question_text)}</h5>
+                </div>
+            `;
+
+            // Render Inputs
+            if (q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
+                html += `<div class="d-flex flex-column gap-3">`;
+                (q.options || []).forEach(opt => {
+                    const isChecked = savedVal === opt ? 'checked' : '';
+                    const activeClass = isChecked ? 'border-primary bg-primary bg-opacity-10' : 'border-2';
+
+                    html += `
+                    <label class="p-3 border rounded d-flex align-items-center gap-3 transition-all ${activeClass}" 
+                           style="cursor: pointer; transition: all 0.2s;"
+                           onclick="ExamEngine.selectOption(this, '${q.id}', '${this.escape(opt)}')">
+                        <input type="radio" name="q_${q.id}" value="${this.escape(opt)}" ${isChecked} 
+                            class="form-check-input mt-0" style="width: 1.2rem; height: 1.2rem;">
+                        <span class="fs-6">${this.escape(opt)}</span>
+                    </label>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `
+                <textarea class="form-control p-3 fs-6" rows="6" 
+                    placeholder="Type your answer here..." 
+                    oninput="ExamEngine.saveAnswer('${q.id}', this.value)">${this.escape(savedVal)}</textarea>
+                `;
+            }
+
+            area.innerHTML = html;
+            this.updateUI();
+        },
+
+        selectOption(labelEl, qId, val) {
+            // Update visual state of all labels
+            const container = labelEl.closest('div');
+            container.querySelectorAll('label').forEach(l => {
+                l.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+            });
+            // Select current
+            labelEl.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+            labelEl.querySelector('input').checked = true;
+
+            this.saveAnswer(qId, val);
+        },
+
+        saveAnswer(qId, val) {
+            STATE.answers[qId] = val;
+            this.updatePalette();
+        },
+
+        updateUI() {
+            this.updatePalette();
+
+            // Buttons
+            const prev = document.querySelector('.prev-btn');
+            const next = document.querySelector('.next-btn');
+            const review = document.querySelector('.review-btn');
+
+            prev.disabled = STATE.currentIndex === 0;
+            prev.onclick = () => this.loadQuestion(STATE.currentIndex - 1);
+
+            if (STATE.currentIndex === STATE.questions.length - 1) {
+                next.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Submit Exam';
+                next.className = 'btn btn-success px-4 next-btn';
+                next.onclick = () => { if (confirm("Are you sure you want to finish?")) this.submit(); };
+            } else {
+                next.innerHTML = 'Next <i class="fas fa-chevron-right ms-2"></i>';
+                next.className = 'btn btn-primary px-4 next-btn';
+                next.onclick = () => this.loadQuestion(STATE.currentIndex + 1);
+            }
+
+            // Review Button State
+            if (STATE.marked.has(STATE.currentIndex)) {
+                review.innerHTML = '<i class="fas fa-flag me-2"></i> Unmark';
+                review.className = 'btn btn-warning text-white review-btn';
+            } else {
+                review.innerHTML = '<i class="far fa-flag me-2"></i> Mark for Review';
+                review.className = 'btn btn-outline-warning review-btn';
+            }
+            review.onclick = () => {
+                if (STATE.marked.has(STATE.currentIndex)) STATE.marked.delete(STATE.currentIndex);
+                else STATE.marked.add(STATE.currentIndex);
+                this.updateUI();
+            };
+
+            // Clear Button
+            document.querySelector('.clear-btn').onclick = () => {
+                const qId = STATE.questions[STATE.currentIndex].id;
+                delete STATE.answers[qId];
+                this.loadQuestion(STATE.currentIndex);
+            };
+        },
+
+        renderPalette() {
+            const container = document.getElementById('palette');
+            container.innerHTML = '';
+
+            STATE.questions.forEach((q, i) => {
+                const btn = document.createElement('button');
+                btn.id = `pal_${i}`;
+                btn.className = 'btn btn-sm d-flex align-items-center justify-content-center fw-bold shadow-sm';
+                btn.style.width = '38px';
+                btn.style.height = '38px';
+                btn.textContent = i + 1;
+                btn.onclick = () => this.loadQuestion(i);
+                container.appendChild(btn);
+            });
+            this.updatePalette();
+        },
+
+        updatePalette() {
+            STATE.questions.forEach((q, i) => {
+                const btn = document.getElementById(`pal_${i}`);
+                if (!btn) return;
+
+                let cls = 'btn-light border';
+                if (STATE.answers[q.id]) cls = 'btn-success text-white border-0';
+                if (STATE.marked.has(i)) cls = 'btn-warning text-white border-0';
+
+                if (i === STATE.currentIndex) {
+                    btn.classList.add('ring-active');
+                    btn.style.border = '2px solid var(--primary)';
+                    btn.style.transform = 'scale(1.1)';
+                } else {
+                    btn.style.border = '';
+                    btn.style.transform = '';
+                }
+
+                btn.className = `btn btn-sm d-flex align-items-center justify-content-center fw-bold shadow-sm ${cls}`;
+            });
+        },
+
+        startTimer() {
+            STATE.timerInterval = setInterval(() => {
+                STATE.timerSeconds--;
+                if (STATE.timerSeconds <= 0) {
+                    this.submit(true); // Auto submit
+                    return;
+                }
+                const mins = Math.floor(STATE.timerSeconds / 60);
+                const secs = STATE.timerSeconds % 60;
+                document.getElementById('timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                // Panic color for last minute
+                if (STATE.timerSeconds < 60) document.getElementById('timer').classList.add('text-danger');
+            }, 1000);
+        },
+
+        async submit(disqualified = false) {
+            clearInterval(STATE.timerInterval);
+            STATE.isExamActive = false; // Stop checks
+
+            // Visual Feedback
+            const nextBtn = document.querySelector('.next-btn');
+            if (nextBtn) {
+                nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting...';
+                nextBtn.disabled = true;
+            }
+
+            try {
+                const csrf = this.getCookie('csrftoken');
+                const res = await fetch(CONFIG.API.SUBMIT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                    body: JSON.stringify({
+                        attempt_id: STATE.attemptId,
+                        answers: STATE.answers,
+                        disqualified: disqualified
+                    })
+                });
+
+                // Fallback Force Redirect if JSON fails
+                try {
+                    const data = await res.json();
+                    window.location.href = `/exam/result/${STATE.attemptId || data.attempt_id}/`;
+                } catch (e) {
+                    console.error("JSON Parse Error", e);
+                    window.location.href = `/exam/result/${STATE.attemptId}/`;
+                }
+
+            } catch (e) {
+                alert("Network Error during submit. Redirecting...");
+                window.location.href = `/exam/result/${STATE.attemptId}/`;
+            }
+        },
+
+        getCookie(name) {
+            let v = null;
+            if (document.cookie && document.cookie !== '') {
+                document.cookie.split(';').forEach(c => {
+                    const ck = c.trim();
+                    if (ck.substring(0, name.length + 1) === (name + '=')) {
+                        v = decodeURIComponent(ck.substring(name.length + 1));
+                    }
+                });
+            }
+            return v;
+        },
+
+        escape(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+    };
+
+    // Initialize System
+    ExamEngine.init();
+
 </script>
 {% endblock %}

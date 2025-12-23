@@ -27,9 +27,33 @@
 
                         <div class="mb-4">
                             <label for="file" class="form-label">Resource File</label>
-                            <input type="file" class="form-control" id="file" name="file" required>
-                            <small class="text-muted">Supported formats: PDF, DOCX, ZIP, MP4, etc.</small>
+                            <input type="file" class="form-control" id="file" name="file" required
+                                accept=".pdf,.docx,.doc,.txt,.zip,.png,.jpg,.jpeg,.mp4">
+                            <small class="text-muted">Supported formats: PDF, DOCX, ZIP, MP4, etc. (Max size:
+                                4MB)</small>
+                            <div id="fileError" class="text-danger mt-1" style="display: none;">
+                                <i class="fas fa-exclamation-circle"></i> File is too large. Maximum allowed size is
+                                4MB.
+                            </div>
                         </div>
+
+                        <script>
+                            document.getElementById('file').addEventListener('change', function () {
+                                const file = this.files[0];
+                                const maxSize = 4 * 1024 * 1024; // 4MB
+                                const errorDiv = document.getElementById('fileError');
+                                const submitBtn = document.querySelector('button[type="submit"]');
+
+                                if (file && file.size > maxSize) {
+                                    errorDiv.style.display = 'block';
+                                    this.value = ''; // Clear input
+                                    submitBtn.disabled = true;
+                                } else {
+                                    errorDiv.style.display = 'none';
+                                    submitBtn.disabled = false;
+                                }
+                            });
+                        </script>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'resource_library' %}" class="btn btn-secondary"><i

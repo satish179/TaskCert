@@ -326,35 +326,92 @@
         }, 1000);
     }
 
-    // Proctoring Logic
+    // Proctoring Logic - Aggressive Mode
     const WARNING_LIMIT = 3;
     let warnings = 0;
 
-    function addWarning(reason) {
+    // Create Warning Overlay dynamically if not exists
+    const warningOverlay = document.createElement('div');
+    warningOverlay.id = 'warningOverlay';
+    warningOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(220,53,69,0.95);z-index:200000;display:none;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;';
+    warningOverlay.innerHTML = `
+        <i class="fas fa-exclamation-triangle fa-5x mb-4"></i>
+        <h1 class="fw-bold">VIOLATION DETECTED</h1>
+        <h3 id="warningReason" class="mb-4"></h3>
+        <div id="warningCount" class="display-1 fw-bold mb-4"></div>
+        <p class="fs-4">Return to Fullscreen immediately to continue.</p>
+        <button id="resumeBtn" class="btn btn-light btn-lg px-5 fw-bold text-danger mt-4">I Understand - Resume Exam</button>
+    `;
+    document.body.appendChild(warningOverlay);
+
+    document.getElementById('resumeBtn').onclick = () => {
+        warningOverlay.style.display = 'none';
+        try {
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => { });
+        } catch (e) { }
+    };
+
+    function triggerWarning(reason) {
+        // Ignore if already showing warning or if exam hasn't started (overlay active)
+        if (warningOverlay.style.display === 'flex') return;
+        if (document.getElementById('introOverlay').style.display !== 'none') return;
+
         warnings++;
+
         if (warnings >= WARNING_LIMIT) {
-            alert(`VIOLATION DETECTED: ${reason}\n\nExam Disqualified. Auto-submitting.`);
-            submitExam(true); // disqualified = true (handled in backend logic ideally, but for now just force submit)
+            warningOverlay.innerHTML = `
+                <i class="fas fa-ban fa-5x mb-4"></i>
+                <h1 class="fw-bold">EXAM TERMINATED</h1>
+                <h3 class="mb-4">Multiple Violations Detected</h3>
+                <p class="fs-4">You have exceeded the warning limit.</p>
+                <div class="spinner-border text-light mt-4"></div>
+            `;
+            warningOverlay.style.display = 'flex';
+            setTimeout(() => submitExam(true), 1500); // Disqualified
         } else {
-            alert(`WARNING (${warnings}/${WARNING_LIMIT}): ${reason}\n\nPlease stay in fullscreen and do not switch tabs.\n3 warnings = Disqualification.`);
-            // Force fullscreen back
-            try {
-                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => { });
-            } catch (e) { }
+            document.getElementById('warningReason').textContent = reason;
+            document.getElementById('warningCount').textContent = `${warnings}/${WARNING_LIMIT}`;
+            warningOverlay.style.display = 'flex';
+        }
+
+        // Log to backend (optional, skipped for now to save bandwidth)
+        console.warn(`Proctoring Warning: ${reason} (${warnings}/${WARNING_LIMIT})`);
+    }
+
+    // Event Listeners for Tab Switching / Visibility
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) triggerWarning("Tab Switch / Window Minimized");
+    });
+    window.addEventListener('blur', () => {
+        // triggerWarning("Focus Lost (Alt+Tab)"); // Too aggressive? Maybe, but requested.
+        // Only trigger if actually hidden or fullscreen lost to avoid false positives on some systems
+        if (document.hidden) triggerWarning("Focus Lost");
+    });
+
+    // Event Listeners for Fullscreen - Vendor Prefixed
+    function checkFullscreen() {
+        // If exam started
+        if (document.getElementById('introOverlay').style.display === 'none') {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFullscreen) {
+                triggerWarning("Exited Fullscreen Mode");
+            }
         }
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && document.getElementById('introOverlay').style.display === 'none') {
-            addWarning("Tab Switch / Window Minimized");
-        }
-    });
+    document.addEventListener('fullscreenchange', checkFullscreen);
+    document.addEventListener('webkitfullscreenchange', checkFullscreen);
+    document.addEventListener('mozfullscreenchange', checkFullscreen);
+    document.addEventListener('MSFullscreenChange', checkFullscreen);
 
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement && document.getElementById('introOverlay').style.display === 'none') {
-            addWarning("Exited Fullscreen Mode");
+    // Aggressive Polling (Backup for missing events)
+    setInterval(() => {
+        if (document.getElementById('introOverlay').style.display === 'none') {
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFullscreen) triggerWarning("Fullscreen Required (Check)");
+            if (document.hidden) triggerWarning("Tab Inactive (Check)");
         }
-    });
+    }, 2000);
 
     // ... (Existing timer/logic) ...
 

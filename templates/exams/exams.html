@@ -1,1079 +1,191 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
-{% block title %}Exams - Task Certification Platform{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Competitive Exam Interface Styles */
-    :root {
-        --exam-header-height: 60px;
-        --exam-footer-height: 70px;
-        --palette-width: 320px;
-        --q-status-answered: #22c55e;
-        --q-status-not-answered: #ef4444;
-        --q-status-review: #a855f7;
-        --q-status-not-visited: #e2e8f0;
-        --q-status-text: #fff;
-    }
-
-    body.exam-mode {
-        overflow: hidden;
-    }
-
-    /* Modal Fullscreen Overrides */
-    .modal-start-exam .modal-dialog {
-        max-width: 100vw;
-        margin: 0;
-        height: 100vh;
-        width: 100vw;
-    }
-
-    .modal-start-exam .modal-content {
-        height: 100%;
-        border-radius: 0;
-        border: none;
-        background: #f8fafc;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Header */
-    .exam-interface-header {
-        height: var(--exam-header-height);
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 1.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        z-index: 10;
-        flex-shrink: 0;
-    }
-
-    .exam-timer-box {
-        background: #0f172a;
-        color: #fff;
-        padding: 0.4rem 1rem;
-        border-radius: 6px;
-        font-family: 'Courier New', monospace;
-        font-weight: 700;
-        font-size: 1.2rem;
-        letter-spacing: 1px;
-    }
-
-    /* Main Body Layout */
-    .exam-interface-body {
-        flex: 1;
-        display: flex;
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* Left Side: Question Area */
-    .exam-question-area {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        background: #fff;
-        position: relative;
-    }
-
-    .question-scroll-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 2rem;
-        padding-bottom: 5rem;
-        /* Space for footer */
-    }
-
-    .question-header {
-        border-bottom: 2px solid #f1f5f9;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-    }
-
-    .question-text {
-        font-size: 1.15rem;
-        color: #334155;
-        line-height: 1.7;
-        font-weight: 500;
-        margin-bottom: 2rem;
-    }
-
-    .option-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .option-label {
-        display: flex;
-        align-items: center;
-        padding: 1rem 1.25rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: #fff;
-    }
-
-    .option-label:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-    }
-
-    .option-label input[type="radio"] {
-        width: 1.2em;
-        height: 1.2em;
-        margin-right: 1rem;
-        accent-color: var(--primary);
-    }
-
-    .option-label.selected {
-        border-color: var(--primary);
-        background: rgba(var(--primary-rgb), 0.05);
-    }
-
-    /* Right Side: Question Palette */
-    .exam-palette-sidebar {
-        width: var(--palette-width);
-        background: #f1f5f9;
-        border-left: 1px solid #e2e8f0;
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        transition: transform 0.3s ease;
-    }
-
-    .palette-header {
-        padding: 1rem;
-        background: #fff;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .candidate-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .candidate-avatar {
-        width: 40px;
-        height: 40px;
-        background: #cbd5e1;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-    }
-
-    .palette-grid-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1rem;
-    }
-
-    .palette-status-legend {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-        margin-bottom: 1.5rem;
-        background: #fff;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .status-dot {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        font-size: 0.65rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-    }
-
-    .palette-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-    }
-
-    .palette-btn {
-        aspect-ratio: 1;
-        border: 1px solid #cbd5e1;
-        background: var(--q-status-not-visited);
-        border-radius: 4px;
-        /* More square-ish like typical exams */
-        font-weight: 600;
-        color: #475569;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        position: relative;
-    }
-
-    .palette-btn:hover {
-        transform: scale(1.05);
-        z-index: 2;
-    }
-
-    .palette-btn.current {
-        border: 2px solid #0f172a;
-        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.2);
-    }
-
-    /* Colors for palette buttons */
-    .palette-btn.answered {
-        background: var(--q-status-answered);
-        color: #fff;
-        border-color: transparent;
-    }
-
-    .palette-btn.not-answered {
-        background: var(--q-status-not-answered);
-        color: #fff;
-        border-color: transparent;
-    }
-
-    .palette-btn.review {
-        background: var(--q-status-review);
-        color: #fff;
-        border-color: transparent;
-    }
-
-    .palette-btn.review-answered {
-        background: var(--q-status-review);
-        color: #fff;
-    }
-
-    .palette-btn.review-answered::after {
-        content: '';
-        position: absolute;
-        bottom: 2px;
-        right: 2px;
-        width: 8px;
-        height: 8px;
-        background: var(--q-status-answered);
-        border-radius: 50%;
-        border: 1px solid #fff;
-    }
-
-    /* Footer / Action Bar */
-    .exam-action-footer {
-        height: var(--exam-footer-height);
-        background: #fff;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 2rem;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        /* Only in question area if we want sidebar to go full height, but let's put it in question area */
-        width: 100%;
-        z-index: 5;
-    }
-
-    /* Common Card Styles for Dashboard */
-    .exams-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        color: white;
-        padding: 3rem;
-        margin: -2rem -2rem 3rem -2rem;
-        border-radius: 0;
-        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.10);
-    }
-
-    .exam-card {
-        border: none;
-        border-radius: 14px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        transition: all 0.4s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        border-left: 5px solid var(--primary);
-    }
-
-    .exam-card:hover {
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
-        transform: translateY(-8px);
-    }
-
-    .exam-card-header {
-        padding: 2rem;
-        border-bottom: 1px solid #e2e8f0;
-        background: var(--surface-2);
-    }
-
-    .exam-card-body {
-        padding: 2rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: var(--surface);
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .exam-palette-sidebar {
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            z-index: 20;
-            transform: translateX(100%);
-            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .exam-palette-sidebar.open {
-            transform: translateX(0);
-        }
-
-        .palette-toggle {
-            display: block !important;
-        }
-    }
-
-    .palette-toggle {
-        display: none;
-        position: fixed;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 19;
-        background: var(--primary);
-        color: white;
-        width: 40px;
-        height: 40px;
-        border-radius: 50% 0 0 50%;
-        text-align: center;
-        line-height: 40px;
-        cursor: pointer;
-    }
-
-    /* Start Screen in Modal */
-    .exam-intro-screen {
-        text-align: center;
-        padding: 4rem 2rem;
-    }
-</style>
-{% endblock %}
+{% block title %}Exams - TaskCert{% endblock %}
 
 {% block content %}
-<div class="exams-header">
-    <h1><i class="fas fa-pencil-alt"></i> Examinations</h1>
-    <p>Take exams to earn your certifications</p>
-</div>
-
-{% if not has_completed_all_tasks %}
-<div class="alert alert-danger p-4 mb-4"
-    style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; border-radius: 8px;">
-    <h4 style="color: #991b1b; font-weight: 700;"><i class="fas fa-lock"></i> Exams Locked</h4>
-    <p style="color: #7f1d1d;">Complete all assigned tasks first to unlock exams. You're making great progress!</p>
-</div>
-{% endif %}
-
-{% if exams %}
-<div class="row">
-    {% for exam in exams %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="exam-card">
-            <div class="exam-card-header">
-                <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h5>
-                <p class="text-muted mb-0">{{ exam.created_by.name }}</p>
-            </div>
-            <div class="exam-card-body">
-                <p class="mb-4 text-muted">{{ exam.description|default:"Test your knowledge on this subject matter." }}
-                </p>
-
-                <div class="d-flex flex-column gap-2 mb-4">
-                    <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-list text-primary center-icon" style="width:20px"></i> <span><strong>{{ exam.questions.count }}</strong> Questions</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-hourglass-half text-primary center-icon" style="width:20px"></i>
-                        <span><strong>{{ exam.duration_minutes }}</strong> Minutes</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 text-muted">
-                        <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i> <span>Pass
-                            Score: <strong>{{ exam.pass_score }}%</strong></span>
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2 flex-wrap mb-4">
-                    <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High
-                        Value</span>
-                    <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{ attempt_counts|dict_get:exam.id|default:"0" }}</span>
-                </div>
-
-                <div class="mt-auto">
-                    {% if not user.is_staff %}
-                    <button class="btn btn-primary w-100 py-2 fw-bold start-exam-btn" data-bs-toggle="modal"
-                        data-bs-target="#examModal{{ exam.id }}" data-exam-id="{{ exam.id }}"
-                        data-duration="{{ exam.duration_minutes|default_if_none:0 }}" data-exam-name="{{ exam.name }}">
-                        <i class="fas fa-play-circle"></i> Start Exam
-                    </button>
-                    {% else %}
-                    <a href="/manage-exams/" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-shield-alt"></i> Manage Exams
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold section-title"><i class="fas fa-edit me-2"></i>Examinations</h2>
+            <p class="text-muted">Take exams to earn your certifications</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <!-- Stats -->
         </div>
     </div>
-    {% endfor %}
-</div>
 
-{% if recent_attempts %}
-<div class="card mt-4 shadow-sm border-0 rounded-3">
-    <div class="card-body p-4">
-        <h4 class="fw-bold mb-3">Recent Attempts</h4>
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead class="bg-light">
-                    <tr>
-                        <th>Exam</th>
-                        <th>Attempt</th>
-                        <th>Score</th>
-                        <th>Status</th>
-                        <th>Started</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in recent_attempts %}
-                    <tr>
-                        <td class="fw-bold">{{ a.exam.name }}</td>
-                        <td>#{{ a.attempt_number }}</td>
-                        <td>{% if a.score != None %}{{ a.score|floatformat:2 }}%{% else %}-{% endif %}</td>
-                        <td>
-                            {% if a.status == 'completed' %} <span class="badge bg-success">Completed</span>
-                            {% elif a.status == 'expired' %} <span class="badge bg-warning text-dark">Expired</span>
-                            {% else %} <span class="badge bg-secondary">In Progress</span> {% endif %}
-                        </td>
-                        <td class="text-muted">{{ a.started_at|date:"M d, Y H:i" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{% else %}
-<div class="text-center py-5">
-    <div class="display-1 text-muted mb-3"><i class="fas fa-inbox"></i></div>
-    <h3>No Exams Available</h3>
-    <p class="text-muted">No exams are currently available for you here.</p>
-</div>
-{% endif %}
-{% endblock %}
-
-{% block modals %}
-{% if exams and not user.is_staff %}
-{% for exam in exams %}
-<!-- Fullscreen Exam Modal -->
-<div class="modal fade modal-start-exam" id="examModal{{ exam.id }}" tabindex="-1" data-bs-backdrop="static"
-    data-bs-keyboard="false" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <!-- Loading State -->
-            <div id="examLoading{{ exam.id }}"
-                class="text-center d-flex flex-column align-items-center justify-content-center"
-                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f8fafc; z-index: 1000;">
-                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-                <h4 class="mt-3 text-muted">Preparing Exam Environment...</h4>
-            </div>
-
-            <!-- Start Instructions State (Before actually clicking start inside modal) -->
-            <div id="examIntro{{ exam.id }}"
-                class="exam-intro-screen d-flex flex-column align-items-center justify-content-center"
-                style="display:none !important; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 999;">
-                <div class="mb-4"><i class="fas fa-pencil-alt fa-4x text-primary"></i></div>
-                <h1 class="fw-bold mb-3">{{ exam.name }}</h1>
-                <div class="card p-4 mb-4 text-start"
-                    style="max-width: 600px; width: 100%; border: 1px solid #e2e8f0; background: #f8fafc;">
-                    <h5 class="fw-bold text-dark mb-3">⚠️ Proctoring Notice:</h5>
-                    <ul class="text-danger mb-3" style="line-height: 1.8; font-weight: 600;">
-                        <li>⛔ DO NOT switch tabs or windows during the exam</li>
-                        <li>⛔ DO NOT minimize the browser</li>
-                        <li>⛔ DO NOT exit fullscreen mode</li>
-                        <li>⛔ Violations may result in automatic exam submission</li>
-                    </ul>
-                    <h5 class="fw-bold text-dark mb-3 mt-4">Instructions:</h5>
-                    <ul class="text-muted mb-0" style="line-height: 1.8;">
-                        <li>The exam duration is <strong>{{ exam.duration_minutes }} minutes</strong>.</li>
-                        <li>Total Questions: <strong>{{ exam.questions.count }}</strong>.</li>
-                        <li>Use the <strong>"Mark for Review"</strong> button if you are unsure about an answer.</li>
-                        <li>The timer at the top right counts down. The exam auto-submits when time reaches zero.</li>
-                        <li>Green = Answered, Red = Not Answered, Purple = Marked for Review</li>
-                    </ul>
+    <!-- Exam Grid -->
+    <div class="row">
+        {% for exam in exams %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="exam-card">
+                <div class="exam-card-header">
+                    <h5 style="color: var(--primary); font-weight: 700;"><i class="fas fa-graduation-cap"></i> {{
+                        exam.name }}</h5>
+                    <p class="text-muted mb-0">{{ exam.created_by.name }}</p>
                 </div>
-                <div class="d-flex gap-3">
-                    <button class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary px-5 py-2 fw-bold" onclick="beginExamSession({{ exam.id }})">I
-                        Understand - Start Exam</button>
-                </div>
-            </div>
+                <div class="exam-card-body">
+                    <p class="mb-4 text-muted">{{ exam.description|default:"Test your knowledge." }}</p>
 
-            <!-- Actual Exam Interface (Hidden initially) -->
-            <div id="examInterface{{ exam.id }}"
-                style="display:none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; flex-direction: column; z-index: 998;">
-
-                <!-- 1. Header -->
-                <div class="exam-interface-header">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="fas fa-graduation-cap text-primary fa-lg"></i>
-                        <h5 class="mb-0 fw-bold text-dark">{{ exam.name }}</h5>
-                    </div>
-                    <div class="exam-timer-box" id="timerDisplay{{ exam.id }}">--:--</div>
-                </div>
-
-                <!-- 2. Body Split -->
-                <div class="exam-interface-body">
-
-                    <!-- Question Area -->
-                    <div class="exam-question-area">
-                        <div class="question-scroll-container pb-5" id="questionContainer{{ exam.id }}">
-                            <!-- Questions Injected Here -->
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="fas fa-list text-primary center-icon" style="width:20px"></i>
+                            <span><strong>{{ exam.questions.count }}</strong> Questions</span>
                         </div>
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="fas fa-hourglass-half text-primary center-icon" style="width:20px"></i>
+                            <span><strong>{{ exam.duration_minutes }}</strong> Minutes</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <i class="fas fa-check-circle text-primary center-icon" style="width:20px"></i>
+                            <span>Pass Score: <strong>{{ exam.pass_score }}%</strong></span>
+                        </div>
+                    </div>
 
-                        <!-- Footer Actions -->
-                        <div class="exam-action-footer">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-secondary" onclick="prevQuestion({{ exam.id }})"
-                                    id="btnPrev{{ exam.id }}">
-                                    <i class="fas fa-chevron-left"></i> Previous
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="nextQuestion({{ exam.id }})"
-                                    id="btnNext{{ exam.id }}">
-                                    Next <i class="fas fa-chevron-right"></i>
-                                </button>
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        <span class="badge bg-light text-primary border"><i class="fas fa-star text-warning"></i> High
+                            Value</span>
+                        <span class="badge bg-light text-primary border"><i class="fas fa-rotate"></i> Attempts: {{
+                            attempt_counts|dict_get:exam.id|default:"0" }}</span>
+                    </div>
+
+                    <div class="mt-auto">
+                        {% if not user.is_staff %}
+                        <button class="btn btn-primary w-100 py-2 fw-bold" data-bs-toggle="modal"
+                            data-bs-target="#examModal{{ exam.id }}" onclick="initExamSetup('{{ exam.id }}')">
+                            <i class="fas fa-play-circle"></i> Start Exam
+                        </button>
+                        {% else %}
+                        <a href="/manage-exams/" class="btn btn-secondary w-100"><i class="fas fa-cog"></i> Manage</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exam Modal (Template Structure for JS to populate) -->
+        <div class="modal fade" id="examModal{{ exam.id }}" data-bs-backdrop="static" data-bs-keyboard="false"
+            tabindex="-1">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+
+                    <!-- 1. Intro Screen -->
+                    <div id="examIntro{{ exam.id }}"
+                        class="d-flex flex-column h-100 justify-content-center align-items-center p-5">
+                        <div class="text-center" style="max-width: 600px;">
+                            <i class="fas fa-file-signature text-primary mb-4" style="font-size: 5rem;"></i>
+                            <h2 class="mb-3">{{ exam.name }}</h2>
+                            <div class="alert alert-warning text-start">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Examination Rules</h5>
+                                <ul class="mb-0">
+                                    <li>This is a proctored exam. Fullscreen mode is required.</li>
+                                    <li>Do not switch tabs or minimize the window.</li>
+                                    <li>Exam will auto-submit when the timer ends.</li>
+                                </ul>
                             </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-warning text-white" onclick="markForReview({{ exam.id }})">
-                                    <i class="fas fa-bookmark"></i> Mark for Review
-                                </button>
-                                <button class="btn btn-outline-dark" onclick="clearResponse({{ exam.id }})">
-                                    Clear Response
-                                </button>
-                            </div>
-                            <button class="btn btn-primary px-4 fw-bold" onclick="saveAndNext({{ exam.id }})">
-                                Save & Next
+                            <button class="btn btn-primary btn-lg px-5 mt-4" onclick="window.examManager.startExam()">
+                                I Understand - Start Exam
                             </button>
+                            <button class="btn btn-outline-secondary mt-3" data-bs-dismiss="modal">Cancel</button>
                         </div>
                     </div>
 
-                    <!-- Toggle for mobile -->
-                    <div class="palette-toggle shadow" onclick="togglePalette({{ exam.id }})">
-                        <i class="fas fa-th"></i>
+                    <!-- 2. Loading Screen -->
+                    <div id="examLoading{{ exam.id }}"
+                        class="d-flex flex-column h-100 justify-content-center align-items-center"
+                        style="display: none !important;">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h4 class="mt-3 text-muted">Preparing Exam Environment...</h4>
                     </div>
 
-                    <!-- Right Palette -->
-                    <div class="exam-palette-sidebar" id="paletteSidebar{{ exam.id }}">
-                        <div class="palette-header">
-                            <div class="candidate-avatar"><i class="fas fa-user"></i></div>
-                            <div>
-                                <div class="fw-bold" style="font-size: 0.9rem;">{{ user.name|default:user.username }}
-                                </div>
-                                <div class="text-muted" style="font-size: 0.8rem;">Candidate</div>
+                    <!-- 3. Exam Interface -->
+                    <div id="examInterface{{ exam.id }}" class="d-none flex-column h-100">
+                        <!-- Top Bar -->
+                        <div class="bg-white border-bottom px-4 py-2 d-flex justify-content-between align-items-center shadow-sm"
+                            style="height: 60px;">
+                            <h5 class="m-0 fw-bold">{{ exam.name }}</h5>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="timer-display fs-4 fw-bold font-monospace">00:00</div>
+                                <button class="btn btn-danger btn-sm btn-submit">Submit Exam</button>
                             </div>
                         </div>
 
-                        <div class="palette-grid-container">
-                            <div class="palette-status-legend">
-                                <div class="legend-item">
-                                    <div class="status-dot" style="background:var(--q-status-answered)">0</div> Answered
+                        <!-- Main Content -->
+                        <div class="flex-grow-1 container-fluid bg-light">
+                            <div class="row h-100">
+                                <!-- Question Area -->
+                                <div class="col-lg-9 col-md-8 p-4 overflow-auto h-100 bg-white shadow-sm">
+                                    <div class="question-area" style="max-width: 900px; margin: 0 auto;">
+                                        <!-- JS renders question here -->
+                                        <div class="placeholder-question">
+                                            <p class="placeholder-glow">
+                                                <span class="placeholder col-7"></span>
+                                                <span class="placeholder col-4"></span>
+                                                <span class="placeholder col-4"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Nav Buttons -->
+                                    <div class="d-flex justify-content-between mt-5 pt-3 border-top"
+                                        style="max-width: 900px; margin: 0 auto;">
+                                        <button class="btn btn-outline-primary px-4 btn-prev"><i
+                                                class="fas fa-chevron-left"></i> Previous</button>
+                                        <div>
+                                            <button class="btn btn-outline-danger me-2 btn-clear">Clear</button>
+                                            <button class="btn btn-outline-warning btn-review"><i
+                                                    class="far fa-flag"></i> Mark for Review</button>
+                                        </div>
+                                        <button class="btn btn-primary px-4 btn-next">Next <i
+                                                class="fas fa-chevron-right"></i></button>
+                                    </div>
                                 </div>
-                                <div class="legend-item">
-                                    <div class="status-dot" style="background:var(--q-status-not-answered)">0</div> Not
-                                    Answered
-                                </div>
-                                <div class="legend-item">
-                                    <div class="status-dot" style="background:var(--q-status-not-visited)">0</div> Not
-                                    Visited
-                                </div>
-                                <div class="legend-item">
-                                    <div class="status-dot" style="background:var(--q-status-review)">0</div> Review
+
+                                <!-- Question Palette -->
+                                <div class="col-lg-3 col-md-4 bg-light border-start p-0 d-flex flex-column h-100">
+                                    <div class="p-3 border-bottom bg-white">
+                                        <h6 class="fw-bold mb-0">Question Palette</h6>
+                                    </div>
+                                    <div class="p-3 flex-grow-1 overflow-auto">
+                                        <div class="palette-grid d-flex flex-wrap gap-2 justify-content-start">
+                                            <!-- JS renders buttons here -->
+                                        </div>
+
+                                        <div class="mt-4 small text-muted">
+                                            <div class="d-flex align-items-center gap-2 mb-1"><span
+                                                    class="badge bg-success rounded-circle p-1"
+                                                    style="width:10px;height:10px;"></span> Answered</div>
+                                            <div class="d-flex align-items-center gap-2 mb-1"><span
+                                                    class="badge bg-warning rounded-circle p-1"
+                                                    style="width:10px;height:10px;"></span> Marked for Review</div>
+                                            <div class="d-flex align-items-center gap-2 mb-1"><span
+                                                    class="badge bg-light border rounded-circle p-1"
+                                                    style="width:10px;height:10px;"></span> Not Visited</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <h6 class="fw-bold mb-3 border-bottom pb-2">Questions Palette</h6>
-                            <div class="palette-grid" id="paletteGrid{{ exam.id }}">
-                                <!-- Grid Buttons -->
-                            </div>
-                        </div>
-
-                        <div class="p-3 border-top bg-white">
-                            <button class="btn btn-success w-100 fw-bold py-2" onclick="confirmSubmit({{ exam.id }})">
-                                <i class="fas fa-paper-plane me-2"></i> SUBMIT EXAM
-                            </button>
                         </div>
                     </div>
+
+                    <!-- 4. Result/Success Screen (JS controlled) -->
+                    <div id="examResult{{ exam.id }}"
+                        class="d-none flex-column h-100 justify-content-center align-items-center">
+                        <!-- JS can show results here or redirect -->
+                    </div>
+
                 </div>
             </div>
-
-            <!-- Result Screen -->
-            <div id="examResult{{ exam.id }}"
-                class="h-100 flex-column align-items-center justify-content-center text-center p-5"
-                style="display:none; background: #fff;">
-                <div class="mb-4">
-                    <i id="resultIcon{{ exam.id }}" class="fas fa-check-circle"
-                        style="font-size: 6rem; color: var(--success);"></i>
-                </div>
-                <h2 class="fw-bold mb-2">Exam Submitted Successfully</h2>
-                <p class="text-muted mb-5">Here is your performance summary</p>
-
-                <div class="card p-5 shadow-sm border-0" style="background: #f8fafc; max-width: 400px; width: 100%;">
-                    <h6 class="text-uppercase text-muted mb-3" style="letter-spacing: 1px;">Your Score</h6>
-                    <h1 id="resultScore{{ exam.id }}" class="display-3 fw-bold text-primary mb-3">0%</h1>
-                    <span id="resultBadge{{ exam.id }}"
-                        class="badge rounded-pill bg-success py-2 px-4 fs-6">PASSED</span>
-                </div>
-
-                <div class="mt-5">
-                    <button class="btn btn-secondary px-5" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-
         </div>
+        {% endfor %}
     </div>
 </div>
-{% endfor %}
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // --- Global State for Multiple Exams ---
-    // We store state by examId to avoid collisions if multiple modals were somehow active (though bootstrap prevents this)
-    const examState = {};
-
-    // Initializer called when clicking "Start Exam" card button
-    function initExamSetup(examId, duration, examName) {
-        // Reset state
-        examState[examId] = {
-            questions: [],
-            currentQIndex: 0,
-            answers: {},        // { qId: "option_value" }
-            markedForReview: new Set(),
-            visited: new Set(),
-            timerInterval: null,
-            durationSec: duration * 60,
-            startTime: null,
-            attemptId: null
-        };
-
-        // UI Reset
-        document.getElementById(`examIntro${examId}`).style.display = 'flex';
-        document.getElementById(`examLoading${examId}`).style.display = 'none';
-        document.getElementById(`examInterface${examId}`).style.display = 'none';
-        document.getElementById(`examResult${examId}`).style.display = 'none';
-    }
-
-    // Called when clicking "I am Ready to Begin"
-    async function beginExamSession(examId) {
-        console.log('Starting exam session for exam ID:', examId);
-        const intro = document.getElementById(`examIntro${examId}`);
-        const loading = document.getElementById(`examLoading${examId}`);
-
-        intro.style.display = 'none';
-        loading.style.display = 'flex';
-        loading.innerHTML = '<div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div><h4 class="mt-3 text-muted">Loading Questions...</h4>';
-
-        try {
-            // Fetch/Start
-            const csrf = getCookie('csrftoken');
-            console.log('Calling start_exam API...');
-            const resp = await fetch('/api/results/start_exam/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-                body: JSON.stringify({ exam_id: examId })
-            });
-
-            console.log('API Response status:', resp.status);
-            const data = await resp.json();
-            console.log('API Response data:', data);
-            if (!resp.ok) throw new Error(data.error || 'Failed to start');
-
-            // Validate response data
-            if (!data.questions || data.questions.length === 0) {
-                throw new Error('No questions received from server');
-            }
-
-            // Init State
-            const state = examState[examId];
-            state.attemptId = data.attempt_id;
-            // Parse expire time
-            const serverExpires = new Date(data.expires_at);
-            const now = new Date();
-            const diffSec = Math.floor((serverExpires.getTime() - now.getTime()) / 1000);
-            state.durationSec = diffSec > 0 ? diffSec : (data.duration_minutes || 30) * 60;
-            state.questions = data.questions || [];
-
-            console.log(`Loaded ${state.questions.length} questions, duration: ${state.durationSec}s`);
-
-            // Render basic UI
-            renderPalette(examId);
-            loadQuestion(examId, 0);
-            startTimer(examId);
-
-            console.log('Switching to exam interface...');
-            // Switch View - IMPORTANT: Hide loading first, then show interface
-            loading.style.display = 'none';
-            const examInterface = document.getElementById(`examInterface${examId}`);
-            examInterface.style.display = 'flex';
-            console.log('Exam interface displayed');
-
-            // Sidebar toggle for mobile - close by default
-            const sidebar = document.getElementById(`paletteSidebar${examId}`);
-            if (sidebar) sidebar.classList.remove('open');
-
-            // Enter fullscreen proctoring mode
-            console.log('Entering proctor mode...');
-            enterProctorMode(examId);
-
-        } catch (e) {
-            console.error('Error starting exam:', e);
-            alert("Error: " + e.message);
-            loading.innerHTML = `<div class="text-danger h5">${e.message}</div><button class="btn btn-secondary mt-3" data-bs-dismiss="modal">Close</button>`;
-        }
-    }
-
-    // --- Core Logic ---
-
-    function loadQuestion(examId, index) {
-        const state = examState[examId];
-        if (index < 0 || index >= state.questions.length) return;
-
-        state.currentQIndex = index;
-        state.visited.add(index);
-
-        const q = state.questions[index];
-        const container = document.getElementById(`questionContainer${examId}`);
-
-        // Render Question HTML
-        let controlHtml = '';
-        const savedAns = state.answers[q.id];
-
-        if (q.question_type === 'short_answer' || (!q.options || q.options.length === 0)) {
-            // Text Area
-            controlHtml = `
-                <div class="mt-3">
-                    <label class="fw-bold mb-2">Your Answer:</label>
-                    <textarea class="form-control p-3" rows="6" 
-                        onchange="recordAnswer(${examId}, ${q.id}, this.value)"
-                        placeholder="Type your answer here...">${savedAns || ''}</textarea>
-                </div>
-            `;
-        } else {
-            // MCQ
-            controlHtml = `<div class="option-container mt-3">`;
-            q.options.forEach((opt, i) => {
-                const isChecked = savedAns === opt ? 'checked' : '';
-                const isSelectedClass = savedAns === opt ? 'selected' : '';
-                controlHtml += `
-                    <label class="option-label ${isSelectedClass}" onclick="selectOptionUI(this, ${examId}, ${q.id}, '${opt.replace(/'/g, "\\'")}')">
-                        <input type="radio" name="q_${q.id}" value="${opt}" ${isChecked}>
-                        <span class="fs-5">${opt}</span>
-                    </label>
-                `;
-            });
-            controlHtml += `</div>`;
-        }
-
-        container.innerHTML = `
-            <div class="question-header d-flex justify-content-between align-items-center">
-                <h4 class="fw-bold m-0" style="color:var(--primary);">Question ${index + 1}</h4>
-                <span class="badge bg-light text-dark border">Mark: 1.0</span>
-            </div>
-            <div class="question-text">
-                ${q.question_text}
-            </div>
-            ${controlHtml}
-        `;
-
-        // Update Buttons state
-        document.getElementById(`btnPrev${examId}`).disabled = (index === 0);
-        document.getElementById(`btnNext${examId}`).innerHTML = (index === state.questions.length - 1) ? 'Finish Section' : 'Next <i class="fas fa-chevron-right"></i>';
-
-        updatePaletteUI(examId);
-    }
-
-    function selectOptionUI(labelEl, examId, qId, val) {
-        // Visual selection
-        const container = labelEl.parentElement;
-        container.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
-        labelEl.classList.add('selected');
-
-        // Check radio
-        const radio = labelEl.querySelector('input[type="radio"]');
-        if (radio) radio.checked = true;
-
-        // Record
-        recordAnswer(examId, qId, val);
-    }
-
-    function recordAnswer(examId, qId, val) {
-        const state = examState[examId];
-        state.answers[qId] = val;
-        // If answered, it's visited
-        // updatePaletteUI called usually on nav, but we can do it here if we want instant feedback in palette
-    }
-
-    function saveAndNext(examId) {
-        const state = examState[examId];
-        if (state.currentQIndex < state.questions.length - 1) {
-            loadQuestion(examId, state.currentQIndex + 1);
-        } else {
-            // Last question
-            updatePaletteUI(examId); // refresh
-            // Maybe prompt submit?
-        }
-    }
-
-    function prevQuestion(examId) {
-        const state = examState[examId];
-        if (state.currentQIndex > 0) {
-            loadQuestion(examId, state.currentQIndex - 1);
-        }
-    }
-
-    function nextQuestion(examId) {
-        saveAndNext(examId);
-    }
-
-    function clearResponse(examId) {
-        const state = examState[examId];
-        const q = state.questions[state.currentQIndex];
-        delete state.answers[q.id];
-
-        // Re-render current
-        loadQuestion(examId, state.currentQIndex);
-    }
-
-    function markForReview(examId) {
-        const state = examState[examId];
-        const q = state.questions[state.currentQIndex];
-
-        if (state.markedForReview.has(q.id)) {
-            state.markedForReview.delete(q.id);
-        } else {
-            state.markedForReview.add(q.id);
-        }
-        updatePaletteUI(examId);
-        // Move to next automatically? Usually distinct in competitive exams. Let's stay.
-    }
-
-    function renderPalette(examId) {
-        const state = examState[examId];
-        const grid = document.getElementById(`paletteGrid${examId}`);
-        grid.innerHTML = '';
-
-        state.questions.forEach((q, idx) => {
-            const btn = document.createElement('div');
-            btn.className = 'palette-btn';
-            btn.id = `paletteBtn_${examId}_${idx}`;
-            btn.textContent = idx + 1;
-            btn.onclick = () => loadQuestion(examId, idx);
-            grid.appendChild(btn);
-        });
-        updatePaletteUI(examId);
-    }
-
-    function updatePaletteUI(examId) {
-        const state = examState[examId];
-
-        state.questions.forEach((q, idx) => {
-            const btn = document.getElementById(`paletteBtn_${examId}_${idx}`);
-            if (!btn) return;
-
-            // Determine Status
-            // Logic:
-            // 1. Current -> .current
-            // 2. Marked Review -> .review (if answered -> .review-answered)
-            // 3. Answered -> .answered
-            // 4. Not Answered (Visited but no ans) -> .not-answered
-            // 5. Not Visited -> default
-
-            // Reset classes
-            btn.className = 'palette-btn';
-
-            const isAnswered = !!state.answers[q.id];
-            const isReview = state.markedForReview.has(q.id);
-            const isVisited = state.visited.has(idx);
-            const isCurrent = (idx === state.currentQIndex);
-
-            if (isCurrent) btn.classList.add('current');
-
-            if (isReview) {
-                if (isAnswered) btn.classList.add('review-answered');
-                else btn.classList.add('review');
-            } else if (isAnswered) {
-                btn.classList.add('answered');
-            } else if (isVisited && !isAnswered) {
-                btn.classList.add('not-answered');
-            }
-        });
-
-        // Update summary counts if we had them (optional)
-    }
-
-    function togglePalette(examId) {
-        document.getElementById(`paletteSidebar${examId}`).classList.toggle('open');
-    }
-
-    // --- Timer ---
-    function startTimer(examId) {
-        const state = examState[examId];
-        const display = document.getElementById(`timerDisplay${examId}`);
-
-        if (state.timerInterval) clearInterval(state.timerInterval);
-
-        function update() {
-            state.durationSec--;
-
-            if (state.durationSec <= 0) {
-                clearInterval(state.timerInterval);
-                display.textContent = "00:00";
-                display.style.color = "red";
-                alert("Time is up! Submitting exam automatically.");
-                submitExamProcess(examId);
-                return;
-            }
-
-            const h = Math.floor(state.durationSec / 3600);
-            const m = Math.floor((state.durationSec % 3600) / 60);
-            const s = state.durationSec % 60;
-
-            let text = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            if (h > 0) text = `${h}:${text}`;
-
-            display.textContent = text;
-
-            // Warning colors
-            if (state.durationSec < 60) display.style.color = "#ef4444"; // red
-            else if (state.durationSec < 300) display.style.color = "#f59e0b"; // orange
-            else display.style.color = "#fff";
-        }
-
-        update();
-        state.timerInterval = setInterval(update, 1000);
-    }
-
-    // --- Submission ---
-    function confirmSubmit(examId) {
-        const state = examState[examId];
-        const answered = Object.keys(state.answers).length;
-        const total = state.questions.length;
-        if (confirm(`You have answered ${answered} out of ${total} questions. Are you sure you want to submit?`)) {
-            submitExamProcess(examId);
-        }
-    }
-
-    async function submitExamProcess(examId) {
-        const state = examState[examId];
-        if (state.timerInterval) clearInterval(state.timerInterval);
-
-        // Show loading?
-
-        try {
-            const csrf = getCookie('csrftoken');
-            const resp = await fetch('/api/results/submit_exam/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-                body: JSON.stringify({
-                    attempt_id: state.attemptId,
-                    answers: state.answers
-                })
-            });
-
-            const data = await resp.json();
-            if (!resp.ok) throw new Error(data.error || 'Submission failed');
-
-            // Show Result
-            document.getElementById(`examInterface${examId}`).style.display = 'none';
-            const resDiv = document.getElementById(`examResult${examId}`);
-            resDiv.style.display = 'flex';
-
-            document.getElementById(`resultScore${examId}`).textContent = (data.score || 0) + '%';
-            const badge = document.getElementById(`resultBadge${examId}`);
-            if (data.passed) {
-                badge.className = 'badge rounded-pill bg-success py-2 px-4 fs-6';
-                badge.textContent = 'PASSED';
-            } else {
-                badge.className = 'badge rounded-pill bg-danger py-2 px-4 fs-6';
-                badge.textContent = 'FAILED';
-            }
-
-            exitProctorMode(examId);
-
-        } catch (e) {
-            alert("Submission succeeded but result display failed: " + e.message); // Fallback usually
-        }
-    }
-
-    // --- Helpers ---
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // --- Proctoring Stub (Keep existing or simplified) ---
-    function enterProctorMode(examId) {
-        document.documentElement.requestFullscreen().catch(e => { });
-        document.body.classList.add('exam-mode');
-        // Add more security listeners here
-    }
-    function exitProctorMode(examId) {
-        if (document.fullscreenElement) document.exitFullscreen().catch(e => { });
-        document.body.classList.remove('exam-mode');
-    }
-
-    // --- Event Listeners ---
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.start-exam-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const examId = this.dataset.examId;
-                const duration = parseInt(this.dataset.duration || 0);
-                const name = this.dataset.examName;
-                initExamSetup(examId, duration, name);
-            });
-        });
-    });
-
-</script>
+<!-- Include the Decoupled Logic -->
+<script src="{% static 'js/exam_interface.js' %}"></script>
 {% endblock %}
